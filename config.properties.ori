@@ -1,0 +1,42 @@
+TEST-BASE-PATH                   = /X-TESTS/ENE # erscheint als label im Haputfenster
+ACTIVITI_URLS                    = CAVDARK-ENE@cavdark::http://NB98765568:9999;CAVDARK-ENE@cavdark::http://PC1234567890:9998; # erscheint als combobox im Haputfenster
+MASTERKONSOLE_URLS               = CAVDARK-ENE@cavdark::http://NB98765568:9999;CAVDARK-ENE@cavdark::http://PC1234567890:9998; # erscheint als combobox im Haputfenster
+TEST-TYPES                       = PHASE1;PHASE2;PHASE1_AND_PHASE2 # erscheint als combobox im Haputfenster
+TEST-SOURCES                     = ITSQ;LOCAL;REMOTE # erscheint als combobox im Haputfenster
+ADMIN_FUNCS_ENABLED              = true # keine GUI-Representation
+ITSQ_TAG_NAME_FORMAT             = USER-ENV-DATE-TIME # kefile:/D:/CTE/StandardMDIGUI/config.propertiesine GUI-Representation
+ITSQ_REVISIONS                   = EINE_PHASEN;ZWEI_PHASEN # erscheint als combobox im Haputfenster
+
+DUMP_IN_REST_CLIENT              = false # erscheint als checkbox "Dump" im Haputfenster
+SFTP_UPLOAD_ACTIVE               = true # erscheint als checkbox "SFTP-Upload" im Haputfenster
+CHECK-EXPORT-PROTOKOLL-ACTIVE    = true # erscheint als checkbox "Export Protokoll" im Haputfenster
+
+MAX_CUSTOMERS_PER_TEST           = 8 # keine GUI-Representation
+TIME_BEFORE_SFTP_COLLECT         = PT30S # keine GUI-Representation
+TIME_BEFORE_BTLG_IMPORT          = PT6M # keine GUI-Representation
+TIME_BEFORE_CT_IMPORT            = PT30S # keine GUI-Representation
+TIME_BEFORE_EXPORT               = PT6M # keine GUI-Representation
+TIME_BEFORE_INSO_EXPORTS         = PT5S # keine GUI-Representation
+
+
+AVAILABLE_CUSTOMERS               = cust01,cust02,cust03,cust04 # erscheint als Tree im Haputfenster
+#                                  CustomerName;                JvmName;    ExportJobName;              UploadJobName;          ProcessIdentifier;      VcListPropName
+#                                  --------------------------   ----------  -------------------------   ---------------------   -----------------
+CUSTOMER_CUST01                   = CUST01;                     CUST-01;    cust01.deltaExport;         cust01.deltaUpload;     EXPORT_TO_CUST01;       cust01export
+CUSTOMER_CUST02                   = CUST02;                     CUST-02;    cust02.deltaExport;         cust02.deltaUpload;     EXPORT_TO_CUST02;       cust02export
+CUSTOMER_CUST03                   = CUST03;                     CUST-03;    cust03.deltaExport;         cust03.deltaUpload;     EXPORT_TO_CUST03;       cust03export
+CUSTOMER_CUST04                   = CUST04;                     CUST-04;    cust04.deltaExport;         cust04.deltaUpload;     EXPORT_TO_CUST04;       cust04export
+
+LAST_TEST_SOURCE = ITSQ # setzt akutuell selektiertes Combobox-Item TEST-TYPES, getter/setter
+LAST_ITSQ_REVISION = ZWEI_PHASEN # setzt akutuell selektiertes Combobox-Item ITSQ_REVISIONS, getter/setter
+LAST_LOAD_PATH = C:/Projekte/CAVDAR/client/ActivitiSupportGUI # keine GUI-Representation, getter/setter-Methoden, getter/setter
+LAST_CFG_FILENAMES_LIST = C:/Projekte/CAVDAR/client/ActivitiSupportGUI/xyz.properties;C:/Projekte/CAVDAR/client/ActivitiSupportGUI/abc.properties # keine GUI-Representation, getter/setter-Methoden
+LAST_CFG_FILENAME = C:/Projekte/CAVDAR/client/ActivitiSupportGUI/config.properties # keine GUI-Representation, getter/setter-Methoden
+LAST_UPLOAD_SYNTHETICS = false   # erscheint als CheckBox im Hauptfenster, getter/setter
+LAST_USE_ONLY_TEST_CLZ = true   # erscheint als CheckBox im Hauptfenster, getter/setter
+
+LAST_WINDOW_HEIGHT = 919 # keine GUI-Representation, initialiseret Dimension und Size des Hauptfensters
+LAST_WINDOW_WIDTH = 1744 # keine GUI-Representation, initialiseret Dimension und Size des Hauptfensters
+LAST_WINDOW_X_POS = 100 # keine GUI-Representation, initialiseret Dimension und Size des Hauptfensters
+LAST_WINDOW_Y_POS = 100 # keine GUI-Representation, initialiseret Dimension und Size des Hauptfensters
+LAST_LOOK_AND_FEEL_CLASS = javax.swing.plaf.metal.MetalLookAndFeel keine GUI-Representation, initialiseret Loog&Feel des Hauptfensters

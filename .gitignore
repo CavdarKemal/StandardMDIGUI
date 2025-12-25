@@ -1,0 +1,13 @@
+# Maven
+target/
+
+# Logs
+logs/
+*.log
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Config mit sensiblen Daten
+config.properties
