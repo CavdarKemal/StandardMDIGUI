@@ -1,5 +1,6 @@
 package de.cavdar;
 
+import de.cavdar.view.DatabaseView;
 import org.assertj.swing.edt.GuiActionRunner;
 import org.assertj.swing.fixture.JInternalFrameFixture;
 import org.assertj.swing.junit.testcase.AssertJSwingJUnitTestCase;

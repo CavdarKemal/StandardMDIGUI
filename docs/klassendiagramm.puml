@@ -2,391 +2,408 @@
 
 skinparam classAttributeIconSize 0
 skinparam linetype ortho
+skinparam packageStyle rectangle
 
-title StandardMDIGUI - Klassendiagramm (Panel/View Pattern)
+title StandardMDIGUI - Klassendiagramm (Panel/View Pattern mit Package-Struktur)
 
-' ========== INTERFACES ==========
+' ========== PACKAGE: de.cavdar.view ==========
 
-interface ViewInfo {
-    +getMenuLabel(): String
-    +getToolbarLabel(): String
-    +getIcon(): Icon
-    +getKeyboardShortcut(): KeyStroke
-    +getToolbarTooltip(): String
-    +getMenuGroup(): String
+package "de.cavdar.view" as view_pkg {
+
+    interface ViewInfo {
+        +getMenuLabel(): String
+        +getToolbarLabel(): String
+        +getIcon(): Icon
+        +getKeyboardShortcut(): KeyStroke
+        +getToolbarTooltip(): String
+        +getMenuGroup(): String
+    }
+
+    abstract class BaseView {
+        #panel: BaseViewPanel
+        #currentWorker: SwingWorker
+        __
+        +BaseView(String)
+        #createPanel(): BaseViewPanel
+        #{abstract} setupToolbarActions(): void
+        #setupListeners(): void
+        #executeTask(Runnable): void
+        +getPanel(): BaseViewPanel
+        +getViewToolbar(): JToolBar
+        +getContentPanel(): JPanel
+    }
+
+    class SampleView {
+        -samplePanel: SampleViewPanel
+        __
+        +SampleView()
+        #createPanel(): BaseViewPanel
+        #setupToolbarActions(): void
+        -startProcess(): void
+        +getSamplePanel(): SampleViewPanel
+    }
+
+    class ProzessView {
+        -prozessPanel: ProzessViewPanel
+        __
+        +ProzessView()
+        #createPanel(): BaseViewPanel
+        #setupToolbarActions(): void
+        -startProcess(): void
+        -clearLog(): void
+        -appendLog(String): void
+        +getToolbarLabel(): String
+        +getProzessPanel(): ProzessViewPanel
+    }
+
+    class AnalyseView {
+        -analysePanel: AnalyseViewPanel
+        __
+        +AnalyseView()
+        #createPanel(): BaseViewPanel
+        #setupToolbarActions(): void
+        -startAnalysis(): void
+        -exportData(): void
+        -clearTable(): void
+        +getToolbarLabel(): String
+        +getAnalysePanel(): AnalyseViewPanel
+    }
+
+    class DatabaseView {
+        -dbPanel: DatabaseViewPanel
+        -connection: Connection
+        __
+        +DatabaseView()
+        +DatabaseView(String)
+        #createPanel(): BaseViewPanel
+        #setupToolbarActions(): void
+        #setupListeners(): void
+        -connect(): void
+        -disconnect(): void
+        -executeQuery(): void
+        +onConnectionsChanged(): void
+        +getDatabasePanel(): DatabaseViewPanel
+    }
+
+    class TreeView {
+        #treePanel: TreeViewPanel
+        __
+        +TreeView()
+        +TreeView(String)
+        #createPanel(): BaseViewPanel
+        #setupToolbarActions(): void
+        #setupLeftToolbarControls(): void
+        #setupRightToolbarControls(): void
+        #setupTabs(): void
+        +addNode(String): DefaultMutableTreeNode
+        +clearTree(): void
+        +refreshTree(): void
+        +expandAll(): void
+        +getToolbarLabel(): String
+    }
+
+    class CustomerTreeView {
+        -cfg: AppConfig
+        -customerPanel: CustomerTreeViewPanel
+        __
+        +CustomerTreeView()
+        #createPanel(): BaseViewPanel
+        #setupToolbarActions(): void
+        -loadCustomers(): void
+        -onTreeSelection(): void
+        -applyFilter(): void
+        -performSearch(): void
+        -editSelected(): void
+        -deleteSelected(): void
+        +getMenuLabel(): String
+        +getToolbarLabel(): String
+    }
 }
 
-interface ConnectionListener <<inner>> {
-    +onConnectionsChanged(): void
+' ========== PACKAGE: de.cavdar.design ==========
+
+package "de.cavdar.design" as design_pkg {
+
+    abstract class EmbeddablePanel {
+        #panelName: String
+        __
+        #EmbeddablePanel(String)
+        #{abstract} initializePanel(): void
+        +getPanelName(): String
+    }
+
+    class SettingsPanel {
+        -cfg: AppConfig
+        -cbDbConnections: JComboBox<String>
+        -onOpenDatabaseView: Runnable
+        __
+        +SettingsPanel()
+        +setOnOpenDatabaseView(Runnable): void
+        +getSelectedConnection(): String
+        +onConnectionsChanged(): void
+        #initializePanel(): void
+        +dispose(): void
+    }
+
+    class TreePanel {
+        -cfg: AppConfig
+        -customerTree: JTree
+        __
+        +TreePanel()
+        #initializePanel(): void
+        +getTree(): JTree
+        +reloadTree(): void
+    }
+
+    class DesktopPanel {
+        -desktopPane: JDesktopPane
+        -databaseView: DatabaseView
+        __
+        +DesktopPanel()
+        #initializePanel(): void
+        +getDesktopPane(): JDesktopPane
+        +openView(BaseView): void
+        +openOrShowDatabaseView(String): void
+        +layoutCascaded(): void
+        +layoutTileVertical(): void
+        +layoutTileHorizontal(): void
+    }
+
+    class BaseViewPanel {
+        #viewToolbar: JToolBar
+        #contentPanel: JPanel
+        #statusPanel: JPanel
+        #progressBar: JProgressBar
+        #btnCancel: JButton
+        __
+        +BaseViewPanel()
+        #initComponents(): void
+        +setProgressVisible(boolean, boolean): void
+        +getViewToolbar(): JToolBar
+        +getContentPanel(): JPanel
+        +getProgressBar(): JProgressBar
+        +getCancelButton(): JButton
+        +getStatusPanel(): JPanel
+    }
+
+    class SampleViewPanel {
+        #lblContent: JLabel
+        #btnStart: JButton
+        __
+        +SampleViewPanel()
+        #initCustomComponents(): void
+        +getStartButton(): JButton
+        +getContentLabel(): JLabel
+    }
+
+    class ProzessViewPanel {
+        #btnStart: JButton
+        #btnClear: JButton
+        #logArea: JTextArea
+        __
+        +ProzessViewPanel()
+        #initCustomComponents(): void
+        +getStartButton(): JButton
+        +getClearButton(): JButton
+        +getLogArea(): JTextArea
+    }
+
+    class AnalyseViewPanel {
+        #btnAnalyse: JButton
+        #btnExport: JButton
+        #btnClear: JButton
+        #resultTable: JTable
+        #tableModel: DefaultTableModel
+        __
+        +AnalyseViewPanel()
+        #initCustomComponents(): void
+        +getAnalyseButton(): JButton
+        +getExportButton(): JButton
+        +getClearButton(): JButton
+        +getResultTable(): JTable
+        +getTableModel(): DefaultTableModel
+    }
+
+    class DatabaseViewPanel {
+        #cbConnections: JComboBox<String>
+        #txtConnectionName: JTextField
+        #txtUrl: JTextField
+        #txtUsername: JTextField
+        #txtPassword: JPasswordField
+        #cbDriver: JComboBox<String>
+        #btnConnect: JButton
+        #btnSave: JButton
+        #btnDelete: JButton
+        #lblStatus: JLabel
+        #txtQuery: JTextArea
+        #btnExecute: JButton
+        #btnClear: JButton
+        #tblResults: JTable
+        #tableModel: DefaultTableModel
+        #lblRowCount: JLabel
+        __
+        +DatabaseViewPanel()
+        #initCustomComponents(): void
+        +getConnectionsComboBox(): JComboBox
+        +getConnectButton(): JButton
+        +getQueryArea(): JTextArea
+        +getExecuteButton(): JButton
+        +getResultsTable(): JTable
+        +getTableModel(): DefaultTableModel
+    }
+
+    class TreeViewPanel {
+        #mainSplitPane: JSplitPane
+        #leftPanel: JPanel
+        #leftToolbar: JToolBar
+        #tree: JTree
+        #treeModel: DefaultTreeModel
+        #rootNode: DefaultMutableTreeNode
+        #rightPanel: JPanel
+        #rightToolbar: JToolBar
+        #tabbedPane: JTabbedPane
+        __
+        +TreeViewPanel()
+        +TreeViewPanel(String)
+        #initTreeComponents(): void
+        +getTree(): JTree
+        +getTreeModel(): DefaultTreeModel
+        +getRootNode(): DefaultMutableTreeNode
+        +getTabbedPane(): JTabbedPane
+        +getLeftToolbar(): JToolBar
+        +getRightToolbar(): JToolBar
+    }
+
+    class CustomerTreeViewPanel {
+        #cbFilter: JComboBox<String>
+        #chkActiveOnly: JCheckBox
+        #btnRefresh: JButton
+        #txtSearch: JTextField
+        #btnSearch: JButton
+        #btnEdit: JButton
+        #btnDelete: JButton
+        #detailsArea: JTextArea
+        #dataTable: JTable
+        __
+        +CustomerTreeViewPanel()
+        #initCustomComponents(): void
+        +getFilterComboBox(): JComboBox
+        +getActiveOnlyCheckBox(): JCheckBox
+        +getRefreshButton(): JButton
+        +getSearchField(): JTextField
+        +getEditButton(): JButton
+        +getDeleteButton(): JButton
+    }
 }
 
-' ========== MAIN FRAME ==========
+' ========== PACKAGE: de.cavdar.frame ==========
 
-class MainFrame {
-    -cfg: AppConfig
-    -settingsPanel: SettingsPanel
-    -treePanel: TreePanel
-    -desktopPanel: DesktopPanel
-    -viewMenu: JMenu
-    -mainToolbar: JToolBar
-    -registeredViews: List<ViewRegistration>
-    __
-    +MainFrame()
-    +registerView(Supplier<BaseView>): void
-    -addViewToMenu(ViewRegistration): void
-    -addViewToToolbar(ViewRegistration): void
-    -createMenuBar(): JMenuBar
-    -createMainToolbar(): JToolBar
-    -createMainSplitPane(): JSplitPane
-    +getDesktopPanel(): DesktopPanel
-    +getSettingsPanel(): SettingsPanel
-    +getTreePanel(): TreePanel
-    +{static} main(String[]): void
+package "de.cavdar.frame" as frame_pkg {
+
+    class MainFrame {
+        -cfg: AppConfig
+        -settingsPanel: SettingsPanel
+        -treePanel: TreePanel
+        -desktopPanel: DesktopPanel
+        -viewMenu: JMenu
+        -mainToolbar: JToolBar
+        -registeredViews: List<ViewRegistration>
+        __
+        +MainFrame()
+        +registerView(Supplier<BaseView>): void
+        -addViewToMenu(ViewRegistration): void
+        -addViewToToolbar(ViewRegistration): void
+        -createMenuBar(): JMenuBar
+        -createMainToolbar(): JToolBar
+        -createMainSplitPane(): JSplitPane
+        +getDesktopPanel(): DesktopPanel
+        +getSettingsPanel(): SettingsPanel
+        +getTreePanel(): TreePanel
+        +{static} main(String[]): void
+    }
 }
 
-' ========== EMBEDDABLE PANELS ==========
+' ========== PACKAGE: de.cavdar.model ==========
 
-abstract class EmbeddablePanel {
-    #panelName: String
-    __
-    #EmbeddablePanel(String)
-    #{abstract} initializePanel(): void
-    +getPanelName(): String
+package "de.cavdar.model" as model_pkg {
+
+    class AppConfig <<Singleton>> {
+        -{static} INSTANCE: AppConfig
+        -{static} PROPERTY_GROUPS: Map
+        -props: Properties
+        __
+        -AppConfig()
+        +{static} getInstance(): AppConfig
+        +getProperty(String): String
+        +setProperty(String, String): void
+        +getArray(String): String[]
+        +getBool(String): boolean
+        +getInt(String, int): int
+        +save(): void
+    }
+
+    class ConnectionInfo {
+        -name: String
+        -url: String
+        -user: String
+        -password: String
+        -driver: String
+        __
+        +getName(): String
+        +getUrl(): String
+        +getUser(): String
+        +getPassword(): String
+        +getDriver(): String
+        +serialize(): String
+        +{static} deserialize(String): ConnectionInfo
+    }
+
+    class ConfigEntry <<record>> {
+        +key: String
+        +value: String
+        +defaultValue: String
+    }
 }
 
-class SettingsPanel {
-    -cfg: AppConfig
-    -cbDbConnections: JComboBox<String>
-    -onOpenDatabaseView: Runnable
-    __
-    +SettingsPanel()
-    +setOnOpenDatabaseView(Runnable): void
-    +getSelectedConnection(): String
-    +onConnectionsChanged(): void
-    #initializePanel(): void
-    +dispose(): void
+' ========== PACKAGE: de.cavdar.util ==========
+
+package "de.cavdar.util" as util_pkg {
+
+    interface ConnectionListener <<inner>> {
+        +onConnectionsChanged(): void
+    }
+
+    class ConnectionManager <<static>> {
+        -{static} connections: List
+        -{static} listeners: List
+        __
+        +{static} getConnectionNames(): String[]
+        +{static} getConnections(): List<ConnectionInfo>
+        +{static} getConnection(String): ConnectionInfo
+        +{static} saveConnection(ConnectionInfo): void
+        +{static} deleteConnection(String): boolean
+        +{static} addListener(ConnectionListener): void
+        +{static} removeListener(ConnectionListener): void
+        +{static} getLastConnectionName(): String
+        +{static} setLastConnectionName(String): void
+    }
+
+    ConnectionManager +-- ConnectionListener : inner
 }
 
-class TreePanel {
-    -cfg: AppConfig
-    -customerTree: JTree
-    __
-    +TreePanel()
-    #initializePanel(): void
-    +getTree(): JTree
-    +reloadTree(): void
-}
+' ========== PACKAGE: de.cavdar.exception ==========
 
-class DesktopPanel {
-    -desktopPane: JDesktopPane
-    -databaseView: DatabaseView
-    __
-    +DesktopPanel()
-    #initializePanel(): void
-    +getDesktopPane(): JDesktopPane
-    +openView(BaseView): void
-    +openOrShowDatabaseView(String): void
-    +layoutCascaded(): void
-    +layoutTileVertical(): void
-    +layoutTileHorizontal(): void
-}
+package "de.cavdar.exception" as exception_pkg {
 
-' ========== BASE VIEW PANEL (GUI) ==========
+    class ConfigurationException {
+        +ConfigurationException(String)
+        +ConfigurationException(String, Throwable)
+    }
 
-class BaseViewPanel {
-    #viewToolbar: JToolBar
-    #contentPanel: JPanel
-    #statusPanel: JPanel
-    #progressBar: JProgressBar
-    #btnCancel: JButton
-    __
-    +BaseViewPanel()
-    #initComponents(): void
-    +setProgressVisible(boolean, boolean): void
-    +getViewToolbar(): JToolBar
-    +getContentPanel(): JPanel
-    +getProgressBar(): JProgressBar
-    +getCancelButton(): JButton
-    +getStatusPanel(): JPanel
-}
-
-' ========== BASE VIEW (LOGIC) ==========
-
-abstract class BaseView {
-    #panel: BaseViewPanel
-    #currentWorker: SwingWorker
-    __
-    +BaseView(String)
-    #createPanel(): BaseViewPanel
-    #{abstract} setupToolbarActions(): void
-    #setupListeners(): void
-    #executeTask(Runnable): void
-    +getPanel(): BaseViewPanel
-    +getViewToolbar(): JToolBar
-    +getContentPanel(): JPanel
-}
-
-' ========== SIMPLE VIEW PANELS (GUI) ==========
-
-class SampleViewPanel {
-    #lblContent: JLabel
-    #btnStart: JButton
-    __
-    +SampleViewPanel()
-    #initCustomComponents(): void
-    +getStartButton(): JButton
-    +getContentLabel(): JLabel
-}
-
-class ProzessViewPanel {
-    #btnStart: JButton
-    #btnClear: JButton
-    #logArea: JTextArea
-    __
-    +ProzessViewPanel()
-    #initCustomComponents(): void
-    +getStartButton(): JButton
-    +getClearButton(): JButton
-    +getLogArea(): JTextArea
-}
-
-class AnalyseViewPanel {
-    #btnAnalyse: JButton
-    #btnExport: JButton
-    #btnClear: JButton
-    #resultTable: JTable
-    #tableModel: DefaultTableModel
-    __
-    +AnalyseViewPanel()
-    #initCustomComponents(): void
-    +getAnalyseButton(): JButton
-    +getExportButton(): JButton
-    +getClearButton(): JButton
-    +getResultTable(): JTable
-    +getTableModel(): DefaultTableModel
-}
-
-class DatabaseViewPanel {
-    #cbConnections: JComboBox<String>
-    #txtConnectionName: JTextField
-    #txtUrl: JTextField
-    #txtUsername: JTextField
-    #txtPassword: JPasswordField
-    #cbDriver: JComboBox<String>
-    #btnConnect: JButton
-    #btnSave: JButton
-    #btnDelete: JButton
-    #lblStatus: JLabel
-    #txtQuery: JTextArea
-    #btnExecute: JButton
-    #btnClear: JButton
-    #tblResults: JTable
-    #tableModel: DefaultTableModel
-    #lblRowCount: JLabel
-    __
-    +DatabaseViewPanel()
-    #initCustomComponents(): void
-    +getConnectionsComboBox(): JComboBox
-    +getConnectButton(): JButton
-    +getQueryArea(): JTextArea
-    +getExecuteButton(): JButton
-    +getResultsTable(): JTable
-    +getTableModel(): DefaultTableModel
-}
-
-' ========== SIMPLE VIEWS (LOGIC) ==========
-
-class SampleView {
-    -samplePanel: SampleViewPanel
-    __
-    +SampleView()
-    #createPanel(): BaseViewPanel
-    #setupToolbarActions(): void
-    -startProcess(): void
-    +getSamplePanel(): SampleViewPanel
-}
-
-class ProzessView {
-    -prozessPanel: ProzessViewPanel
-    __
-    +ProzessView()
-    #createPanel(): BaseViewPanel
-    #setupToolbarActions(): void
-    -startProcess(): void
-    -clearLog(): void
-    -appendLog(String): void
-    +getToolbarLabel(): String
-    +getProzessPanel(): ProzessViewPanel
-}
-
-class AnalyseView {
-    -analysePanel: AnalyseViewPanel
-    __
-    +AnalyseView()
-    #createPanel(): BaseViewPanel
-    #setupToolbarActions(): void
-    -startAnalysis(): void
-    -exportData(): void
-    -clearTable(): void
-    +getToolbarLabel(): String
-    +getAnalysePanel(): AnalyseViewPanel
-}
-
-class DatabaseView {
-    -dbPanel: DatabaseViewPanel
-    -connection: Connection
-    __
-    +DatabaseView()
-    +DatabaseView(String)
-    #createPanel(): BaseViewPanel
-    #setupToolbarActions(): void
-    #setupListeners(): void
-    -connect(): void
-    -disconnect(): void
-    -executeQuery(): void
-    +onConnectionsChanged(): void
-    +getDatabasePanel(): DatabaseViewPanel
-}
-
-' ========== TREE VIEW PATTERN ==========
-
-class TreeViewPanel {
-    #mainSplitPane: JSplitPane
-    #leftPanel: JPanel
-    #leftToolbar: JToolBar
-    #tree: JTree
-    #treeModel: DefaultTreeModel
-    #rootNode: DefaultMutableTreeNode
-    #rightPanel: JPanel
-    #rightToolbar: JToolBar
-    #tabbedPane: JTabbedPane
-    __
-    +TreeViewPanel()
-    +TreeViewPanel(String)
-    #initTreeComponents(): void
-    +getTree(): JTree
-    +getTreeModel(): DefaultTreeModel
-    +getRootNode(): DefaultMutableTreeNode
-    +getTabbedPane(): JTabbedPane
-    +getLeftToolbar(): JToolBar
-    +getRightToolbar(): JToolBar
-}
-
-class CustomerTreeViewPanel {
-    #cbFilter: JComboBox<String>
-    #chkActiveOnly: JCheckBox
-    #btnRefresh: JButton
-    #txtSearch: JTextField
-    #btnSearch: JButton
-    #btnEdit: JButton
-    #btnDelete: JButton
-    #detailsArea: JTextArea
-    #dataTable: JTable
-    __
-    +CustomerTreeViewPanel()
-    #initCustomComponents(): void
-    +getFilterComboBox(): JComboBox
-    +getActiveOnlyCheckBox(): JCheckBox
-    +getRefreshButton(): JButton
-    +getSearchField(): JTextField
-    +getEditButton(): JButton
-    +getDeleteButton(): JButton
-}
-
-class TreeView {
-    #treePanel: TreeViewPanel
-    __
-    +TreeView()
-    +TreeView(String)
-    #createPanel(): BaseViewPanel
-    #setupToolbarActions(): void
-    #setupLeftToolbarControls(): void
-    #setupRightToolbarControls(): void
-    #setupTabs(): void
-    +addNode(String): DefaultMutableTreeNode
-    +clearTree(): void
-    +refreshTree(): void
-    +expandAll(): void
-    +getToolbarLabel(): String
-}
-
-class CustomerTreeView {
-    -cfg: AppConfig
-    -customerPanel: CustomerTreeViewPanel
-    __
-    +CustomerTreeView()
-    #createPanel(): BaseViewPanel
-    #setupToolbarActions(): void
-    -loadCustomers(): void
-    -onTreeSelection(): void
-    -applyFilter(): void
-    -performSearch(): void
-    -editSelected(): void
-    -deleteSelected(): void
-    +getMenuLabel(): String
-    +getToolbarLabel(): String
-}
-
-' ========== UTILITY CLASSES ==========
-
-class AppConfig <<Singleton>> {
-    -{static} INSTANCE: AppConfig
-    -props: Properties
-    __
-    -AppConfig()
-    +{static} getInstance(): AppConfig
-    +getProperty(String): String
-    +setProperty(String, String): void
-    +getArray(String): String[]
-    +getBool(String): boolean
-    +getInt(String, int): int
-    +save(): void
-}
-
-class ConnectionManager <<static>> {
-    -{static} connections: Map
-    -{static} listeners: List
-    __
-    +{static} getConnectionNames(): String[]
-    +{static} getConnection(String): ConnectionInfo
-    +{static} saveConnection(ConnectionInfo): void
-    +{static} deleteConnection(String): void
-    +{static} addListener(ConnectionListener): void
-    +{static} removeListener(ConnectionListener): void
-    +{static} getLastConnectionName(): String
-    +{static} setLastConnectionName(String): void
-}
-
-class ConnectionInfo {
-    -name: String
-    -url: String
-    -user: String
-    -password: String
-    -driver: String
-    __
-    +getName(): String
-    +getUrl(): String
-    +getUser(): String
-    +getPassword(): String
-    +getDriver(): String
-}
-
-class ConfigEntry <<record>> {
-    +key: String
-    +value: String
-    +defaultValue: String
-}
-
-' ========== EXCEPTIONS ==========
-
-class ConfigurationException {
-    +ConfigurationException(String)
-    +ConfigurationException(String, Throwable)
-}
-
-class ViewException {
-    +ViewException(String)
-    +ViewException(String, Throwable)
+    class ViewException {
+        +ViewException(String)
+        +ViewException(String, Throwable)
+    }
 }
 
 ' ========== PANEL INHERITANCE ==========
@@ -441,7 +458,6 @@ MainFrame ..> BaseView : registers
 DesktopPanel ..> BaseView : opens
 SettingsPanel ..> ConnectionManager : uses
 ConnectionManager ..> ConnectionInfo : manages
-ConnectionManager +-- ConnectionListener : inner
 
 MainFrame ..> AppConfig
 SettingsPanel ..> AppConfig

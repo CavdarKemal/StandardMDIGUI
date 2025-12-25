@@ -1,5 +1,6 @@
 package de.cavdar.util;
 
+import de.cavdar.model.ConfigEntry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

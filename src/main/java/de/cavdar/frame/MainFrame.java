@@ -1,5 +1,10 @@
-package de.cavdar;
+package de.cavdar.frame;
 
+import de.cavdar.design.DesktopPanel;
+import de.cavdar.design.SettingsPanel;
+import de.cavdar.design.TreePanel;
+import de.cavdar.model.AppConfig;
+import de.cavdar.view.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

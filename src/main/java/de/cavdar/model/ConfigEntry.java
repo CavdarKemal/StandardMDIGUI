@@ -1,4 +1,4 @@
-package de.cavdar.util;
+package de.cavdar.model;
 
 import java.util.Objects;
 

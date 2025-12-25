@@ -1,6 +1,8 @@
-package de.cavdar;
+package de.cavdar.view;
 
-import de.cavdar.util.ConnectionInfo;
+import de.cavdar.design.BaseViewPanel;
+import de.cavdar.design.DatabaseViewPanel;
+import de.cavdar.model.ConnectionInfo;
 import de.cavdar.util.ConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

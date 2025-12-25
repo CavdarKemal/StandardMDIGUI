@@ -1,5 +1,6 @@
-package de.cavdar;
+package de.cavdar.design;
 
+import de.cavdar.model.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

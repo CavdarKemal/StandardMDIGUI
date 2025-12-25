@@ -1,4 +1,4 @@
-package de.cavdar;
+package de.cavdar.design;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;

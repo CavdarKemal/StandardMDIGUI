@@ -1,5 +1,7 @@
-package de.cavdar;
+package de.cavdar.view;
 
+import de.cavdar.design.AnalyseViewPanel;
+import de.cavdar.design.BaseViewPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

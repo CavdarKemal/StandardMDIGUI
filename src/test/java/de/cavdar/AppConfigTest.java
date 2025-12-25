@@ -1,5 +1,6 @@
 package de.cavdar;
 
+import de.cavdar.model.AppConfig;
 import org.junit.jupiter.api.*;
 
 import java.io.FileOutputStream;
