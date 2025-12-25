@@ -8,19 +8,26 @@ import javax.swing.*;
 
 /**
  * Abstract base class for all internal view frames.
- * Provides common functionality like toolbar management, progress bar,
- * and background task execution with SwingWorker.
+ * Uses BaseViewPanel for GUI, this class handles logic and events.
+ *
+ * Pattern:
+ * - BaseViewPanel: GUI only (can be GUI designer generated)
+ * - BaseView: Logic and event handlers only
+ *
+ * Subclasses should:
+ * 1. Create a custom Panel class extending BaseViewPanel
+ * 2. Override createPanel() to return custom panel
+ * 3. Override setupToolbarActions() to add toolbar button listeners
+ * 4. Override setupListeners() for additional event handlers
  *
  * @author StandardMDIGUI
- * @version 1.0
- * @since 2024-12-24
+ * @version 2.0
+ * @since 2024-12-25
  */
-public abstract class BaseView extends JInternalFrame {
+public abstract class BaseView extends JInternalFrame implements ViewInfo {
     private static final Logger LOG = LoggerFactory.getLogger(BaseView.class);
 
-    protected JProgressBar progressBar;
-    protected JButton btnCancel;
-    protected JToolBar toolBar;
+    protected BaseViewPanel panel;
     protected SwingWorker<Void, Void> currentWorker;
 
     /**
@@ -33,36 +40,53 @@ public abstract class BaseView extends JInternalFrame {
         setSize(400, 300);
         setLayout(new BorderLayout());
 
-        toolBar = new JToolBar();
-        setupViewToolbar(toolBar);
-        add(toolBar, BorderLayout.NORTH);
+        // Create and add panel
+        panel = createPanel();
+        add(panel, BorderLayout.CENTER);
 
-        JPanel statusPanel = new JPanel(new BorderLayout());
-        progressBar = new JProgressBar();
-        progressBar.setVisible(false);
-        btnCancel = new JButton("Cancel");
-        btnCancel.setVisible(false);
-
-        btnCancel.addActionListener(e -> {
-            if (currentWorker != null) {
-                LOG.info("Cancelling background task in view: {}", getTitle());
-                currentWorker.cancel(true);
-            }
-        });
-
-        statusPanel.add(progressBar, BorderLayout.CENTER);
-        statusPanel.add(btnCancel, BorderLayout.EAST);
-        add(statusPanel, BorderLayout.SOUTH);
+        // Setup logic
+        setupCancelAction();
+        setupToolbarActions();
+        setupListeners();
 
         LOG.debug("BaseView created: {}", title);
     }
 
     /**
-     * Template method for subclasses to setup their specific toolbar buttons.
+     * Creates the panel instance.
+     * Override to return a custom panel (e.g., GUI designer generated).
      *
-     * @param tb the toolbar to add buttons to
+     * @return the panel instance
      */
-    protected abstract void setupViewToolbar(JToolBar tb);
+    protected BaseViewPanel createPanel() {
+        return new BaseViewPanel();
+    }
+
+    /**
+     * Sets up the cancel button action.
+     */
+    private void setupCancelAction() {
+        panel.getCancelButton().addActionListener(e -> {
+            if (currentWorker != null) {
+                LOG.info("Cancelling background task in view: {}", getTitle());
+                currentWorker.cancel(true);
+            }
+        });
+    }
+
+    /**
+     * Override to add action listeners to toolbar buttons.
+     * Called after panel creation.
+     */
+    protected abstract void setupToolbarActions();
+
+    /**
+     * Override to add additional event listeners.
+     * Called after setupToolbarActions().
+     */
+    protected void setupListeners() {
+        // Default: empty - override in subclass
+    }
 
     /**
      * Executes a background task with progress indication.
@@ -73,9 +97,7 @@ public abstract class BaseView extends JInternalFrame {
     protected void executeTask(Runnable taskLogic) {
         LOG.info("Starting background task in view: {}", getTitle());
 
-        progressBar.setIndeterminate(true);
-        progressBar.setVisible(true);
-        btnCancel.setVisible(true);
+        panel.setProgressVisible(true, true);
 
         currentWorker = new SwingWorker<>() {
             @Override
@@ -86,8 +108,7 @@ public abstract class BaseView extends JInternalFrame {
 
             @Override
             protected void done() {
-                progressBar.setVisible(false);
-                btnCancel.setVisible(false);
+                panel.setProgressVisible(false, false);
                 if (isCancelled()) {
                     LOG.info("Background task cancelled in view: {}", getTitle());
                     JOptionPane.showMessageDialog(BaseView.this, "Aktion abgebrochen.");
@@ -97,5 +118,46 @@ public abstract class BaseView extends JInternalFrame {
             }
         };
         currentWorker.execute();
+    }
+
+    // ===== Convenience methods =====
+
+    /**
+     * Returns the panel instance.
+     *
+     * @return the panel
+     */
+    public BaseViewPanel getPanel() {
+        return panel;
+    }
+
+    /**
+     * Returns the view toolbar for adding buttons.
+     *
+     * @return the toolbar
+     */
+    public JToolBar getViewToolbar() {
+        return panel.getViewToolbar();
+    }
+
+    /**
+     * Returns the content panel for adding content.
+     *
+     * @return the content panel
+     */
+    public JPanel getContentPanel() {
+        return panel.getContentPanel();
+    }
+
+    // ===== ViewInfo Default Implementation =====
+
+    @Override
+    public String getMenuLabel() {
+        return getTitle();
+    }
+
+    @Override
+    public String getToolbarLabel() {
+        return null;
     }
 }
