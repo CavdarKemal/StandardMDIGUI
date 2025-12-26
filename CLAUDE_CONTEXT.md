@@ -180,10 +180,54 @@ private JMenuItemFixture clickMenu(String... path) {
 
 ## Git-Historie (letzte Commits)
 ```
+2040665 Add Docker support with PostgreSQL
 ba3ba96 Add SplitPane layout and table tree to DatabaseView
 d2d70d6 Use custom PNG icons instead of UIManager icons
 094bff5 Add keyboard shortcuts, icons, menu groups, and split pane persistence
-e32f83b Fix flaky menu tests in MainFrameTest
+```
+
+## Docker-Konfiguration
+
+Die Anwendung kann in Docker-Containern ausgeführt werden:
+
+### Struktur
+```
+docker/
+├── init-db.sql         # Datenbank-Initialisierung (Tabellen, Beispieldaten)
+├── start-windows.bat   # Windows Starter (mit VcXsrv X11)
+├── start-linux.sh      # Linux Starter (mit xhost)
+├── stop.bat            # Container stoppen
+└── README.md           # Vollständige Dokumentation
+
+Dockerfile              # Multi-Stage Build (Maven → JRE)
+docker-compose.yml      # PostgreSQL + Java-App Orchestrierung
+```
+
+### Container
+- **postgres** (PostgreSQL 16 Alpine): Port 5432, DB `standardmdi`
+- **app** (Java Swing): X11-Forwarding für GUI
+
+### Beispieldaten (init-db.sql)
+- `customers` - Kundenstammdaten
+- `orders` - Bestellungen
+- `products` - Produkte
+- `v_order_summary` - View für Bestellübersicht
+
+### Schnellstart
+```batch
+cd docker
+start-windows.bat  # Benötigt VcXsrv mit "Disable access control"
+```
+
+## Assembly/Distribution
+
+Maven Assembly Plugin erstellt ZIP-Distribution:
+```
+target/StandardMDIGUI-1.0-SNAPSHOT-distribution.zip
+├── StandardMDIGUI-1.0-SNAPSHOT.jar   # Main-JAR (im Root)
+├── lib/                              # Dependencies
+├── start.bat                         # Windows Starter
+└── start.sh                          # Linux Starter
 ```
 
 ## Lokale Umgebung
@@ -191,6 +235,7 @@ e32f83b Fix flaky menu tests in MainFrameTest
 - **MAVEN_HOME:** `E:\Projekte\Tools\apache-maven-3.9.12`
 - **PostgreSQL 16:** Port 5432
 - **Java:** 25
+- **Docker Desktop:** Für Container-Ausführung
 
 ## TODO / Nächste Schritte
 - [ ] DatabaseView: Spalten-Info beim Aufklappen einer Tabelle anzeigen
