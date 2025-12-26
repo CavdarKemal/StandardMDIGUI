@@ -30,6 +30,7 @@
 4. **SQL-History/Favoriten** - ComboBox mit History (max 20) und Favoriten (★-Prefix)
 5. **Export-Funktionalität** - CSV und Excel (HTML-Tabelle) Export für Query-Ergebnisse
 6. **CustomerTreeView komplett überarbeitet** - Hierarchisches Model mit Checkboxen
+7. **Directory-Persistenz** - Load/Save merkt sich letztes Verzeichnis
 
 ### Config-Wechsel Feature (neu)
 
@@ -97,6 +98,12 @@ TestCustomer (customerKey, customerName, jvmName, testPhase, activated)
 - `util/TestDataLoader.java` - JSON Laden/Speichern
 - `util/CheckboxTreeCellRenderer.java` - Checkbox-Anzeige
 - `util/CheckboxTreeCellEditor.java` - Checkbox-Klick-Handling
+
+### Directory-Persistenz (CustomerTreeView)
+- **`LAST_LOAD_DIRECTORY`** - Zuletzt verwendetes Verzeichnis
+- **`LOAD_DIRECTORIES`** - Historie der letzten 10 Verzeichnisse (`;`-getrennt)
+- FileChooser öffnet automatisch im letzten verwendeten Verzeichnis
+- Verzeichnis wird bei erfolgreichem Laden/Speichern gespeichert
 
 ### Custom Icons (IconLoader)
 Neue Utility-Klasse `de.cavdar.util.IconLoader` lädt PNG-Icons aus `resources/icons/`:
@@ -316,10 +323,11 @@ private JMenuItemFixture clickMenu(String... path) {
 
 ## Git-Historie (letzte Commits)
 ```
-2040665 Add Docker support with PostgreSQL
-ba3ba96 Add SplitPane layout and table tree to DatabaseView
-d2d70d6 Use custom PNG icons instead of UIManager icons
-094bff5 Add keyboard shortcuts, icons, menu groups, and split pane persistence
+4896c31 Add directory persistence for CustomerTreeView load/save
+35a65f9 Add hierarchical CustomerTreeView with checkbox activation
+1c5651c Add SQL history/favorites and CSV/Excel export to DatabaseView
+c094a72 Add config selector with GUI reload and dynamic save path
+fdb11ba Update CLAUDE_CONTEXT.md with Docker prerequisites
 ```
 
 ## Docker-Konfiguration
@@ -412,6 +420,7 @@ target/StandardMDIGUI-1.0-SNAPSHOT-distribution.zip
 - [x] ~~**SQL-History/Favoriten**~~ - ComboBox mit History und Favoriten (26.12.2025)
 - [x] ~~**Export-Funktionalität**~~ - CSV und Excel Export (26.12.2025)
 - [x] ~~**CustomerTreeView überarbeitet**~~ - Hierarchisches Model mit Checkboxen (26.12.2025)
+- [x] ~~**Directory-Persistenz**~~ - Load/Save merkt sich letztes Verzeichnis (26.12.2025)
 - [ ] Weitere Views nach Bedarf
 
 ## Prompt zum Fortsetzen
