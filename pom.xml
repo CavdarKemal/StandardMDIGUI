@@ -48,6 +48,13 @@
             <version>3.17.1</version>
             <scope>test</scope>
         </dependency>
+        <!-- JUnit Vintage Engine for JUnit 4 tests (required for AssertJ-Swing) -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>5.10.1</version>
+            <scope>test</scope>
+        </dependency>
 
         <!-- Database: PostgreSQL JDBC Driver -->
         <dependency>
@@ -63,6 +70,18 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.3</version>
+                <configuration>
+                    <!-- Required for AssertJ Swing with Java 9+ -->
+                    <argLine>
+                        --add-opens java.base/java.util=ALL-UNNAMED
+                        --add-opens java.base/java.lang=ALL-UNNAMED
+                        --add-opens java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens java.desktop/java.awt=ALL-UNNAMED
+                        --add-opens java.desktop/javax.swing=ALL-UNNAMED
+                        --add-opens java.desktop/sun.awt=ALL-UNNAMED
+                        --add-opens java.desktop/java.awt.event=ALL-UNNAMED
+                    </argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>
