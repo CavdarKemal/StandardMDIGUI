@@ -1,0 +1,50 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0
+                              http://maven.apache.org/xsd/assembly-2.2.0.xsd">
+
+    <id>dist</id>
+
+    <formats>
+        <format>zip</format>
+        <format>dir</format>
+    </formats>
+
+    <includeBaseDirectory>true</includeBaseDirectory>
+    <baseDirectory>${project.artifactId}-${project.version}</baseDirectory>
+
+    <!-- Include the main JAR with dependencies -->
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <scope>runtime</scope>
+        </dependencySet>
+    </dependencySets>
+
+    <!-- Include files from deployment directory -->
+    <fileSets>
+        <!-- Deployment files (scripts, configs, etc.) -->
+        <fileSet>
+            <directory>${project.basedir}/deployment</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>**/*</include>
+            </includes>
+            <!-- Make shell scripts executable -->
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+
+        <!-- Include README and LICENSE if present -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>README.md</include>
+                <include>LICENSE</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+
+</assembly>
