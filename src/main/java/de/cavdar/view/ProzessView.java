@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 /**
  * View for process management and execution.
@@ -49,6 +51,21 @@ public class ProzessView extends BaseView {
     @Override
     public String getToolbarLabel() {
         return "Prozess";
+    }
+
+    @Override
+    public KeyStroke getKeyboardShortcut() {
+        return KeyStroke.getKeyStroke(KeyEvent.VK_2, InputEvent.CTRL_DOWN_MASK);
+    }
+
+    @Override
+    public Icon getIcon() {
+        return UIManager.getIcon("FileChooser.detailsViewIcon");
+    }
+
+    @Override
+    public String getMenuGroup() {
+        return "Verwaltung";
     }
 
     // ===== Business Logic =====

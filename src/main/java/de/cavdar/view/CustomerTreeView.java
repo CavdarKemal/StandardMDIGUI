@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 /**
  * View for customer data with tree navigation.
@@ -171,5 +173,20 @@ public class CustomerTreeView extends TreeView {
     @Override
     public String getToolbarLabel() {
         return "Kunden";
+    }
+
+    @Override
+    public KeyStroke getKeyboardShortcut() {
+        return KeyStroke.getKeyStroke(KeyEvent.VK_5, InputEvent.CTRL_DOWN_MASK);
+    }
+
+    @Override
+    public Icon getIcon() {
+        return UIManager.getIcon("FileView.directoryIcon");
+    }
+
+    @Override
+    public String getMenuGroup() {
+        return "Verwaltung";
     }
 }

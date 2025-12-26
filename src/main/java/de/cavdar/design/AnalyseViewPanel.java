@@ -39,12 +39,15 @@ public class AnalyseViewPanel extends BaseViewPanel {
 
     private void setupToolbarComponents() {
         btnAnalyse = new JButton("Analyse starten");
+        btnAnalyse.setName("Analyse starten");
         viewToolbar.add(btnAnalyse);
 
         btnExport = new JButton("Exportieren");
+        btnExport.setName("Exportieren");
         viewToolbar.add(btnExport);
 
         btnClear = new JButton("Löschen");
+        btnClear.setName("Löschen");
         viewToolbar.add(btnClear);
     }
 

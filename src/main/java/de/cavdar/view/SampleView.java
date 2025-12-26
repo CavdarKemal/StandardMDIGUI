@@ -5,6 +5,10 @@ import de.cavdar.design.SampleViewPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+
 /**
  * Sample view demonstrating the BaseView framework.
  * Uses SampleViewPanel for GUI, this class contains only logic.
@@ -39,6 +43,23 @@ public class SampleView extends BaseView {
     @Override
     protected void setupToolbarActions() {
         samplePanel.getStartButton().addActionListener(e -> startProcess());
+    }
+
+    // ===== ViewInfo Implementation =====
+
+    @Override
+    public KeyStroke getKeyboardShortcut() {
+        return KeyStroke.getKeyStroke(KeyEvent.VK_1, InputEvent.CTRL_DOWN_MASK);
+    }
+
+    @Override
+    public Icon getIcon() {
+        return UIManager.getIcon("FileView.fileIcon");
+    }
+
+    @Override
+    public String getMenuGroup() {
+        return "Analyse";
     }
 
     // ===== Business Logic =====

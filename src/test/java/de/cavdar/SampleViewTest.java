@@ -98,7 +98,10 @@ public class SampleViewTest extends AssertJSwingJUnitTestCase {
     }
 
     @Test
-    public void shouldHaveCancelButton() {
-        viewFixture.button("Cancel").requireVisible();
+    public void shouldHaveCancelButtonHiddenInitially() {
+        // Cancel button exists but is hidden until progress starts
+        SampleView view = (SampleView) viewFixture.target();
+        assertThat(view.getPanel().getCancelButton()).isNotNull();
+        assertThat(view.getPanel().getCancelButton().isVisible()).isFalse();
     }
 }

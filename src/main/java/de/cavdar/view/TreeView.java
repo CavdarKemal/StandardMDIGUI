@@ -9,6 +9,8 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 /**
  * Tree-based view with split pane layout.
@@ -212,5 +214,20 @@ public class TreeView extends BaseView {
     @Override
     public String getToolbarLabel() {
         return "Tree";
+    }
+
+    @Override
+    public KeyStroke getKeyboardShortcut() {
+        return KeyStroke.getKeyStroke(KeyEvent.VK_4, InputEvent.CTRL_DOWN_MASK);
+    }
+
+    @Override
+    public Icon getIcon() {
+        return UIManager.getIcon("Tree.openIcon");
+    }
+
+    @Override
+    public String getMenuGroup() {
+        return "Navigation";
     }
 }

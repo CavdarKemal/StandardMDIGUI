@@ -27,10 +27,12 @@ public class SampleViewPanel extends BaseViewPanel {
     protected void initCustomComponents() {
         // Toolbar button
         btnStart = new JButton("Start Prozess");
+        btnStart.setName("Start Prozess");
         viewToolbar.add(btnStart);
 
         // Content label
         lblContent = new JLabel("Inhalt der View...");
+        lblContent.setName("Inhalt der View...");
         contentPanel.add(lblContent, java.awt.BorderLayout.CENTER);
     }
 

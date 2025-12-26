@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.*;
@@ -25,7 +26,7 @@ class AppConfigTest {
         originalConfigFile = Path.of("config.properties");
         if (Files.exists(originalConfigFile)) {
             tempConfigFile = Path.of("config.properties.backup");
-            Files.copy(originalConfigFile, tempConfigFile);
+            Files.copy(originalConfigFile, tempConfigFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
@@ -33,7 +34,7 @@ class AppConfigTest {
     static void teardownClass() throws IOException {
         // Restore original config
         if (tempConfigFile != null && Files.exists(tempConfigFile)) {
-            Files.move(tempConfigFile, originalConfigFile);
+            Files.move(tempConfigFile, originalConfigFile, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

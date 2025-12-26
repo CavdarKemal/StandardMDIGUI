@@ -62,6 +62,7 @@ public class BaseViewPanel extends JPanel {
         progressBar.setVisible(false);
 
         btnCancel = new JButton("Cancel");
+        btnCancel.setName("Cancel");
         btnCancel.setVisible(false);
 
         statusPanel.add(progressBar, BorderLayout.CENTER);

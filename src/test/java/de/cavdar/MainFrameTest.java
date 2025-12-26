@@ -104,8 +104,8 @@ public class MainFrameTest extends AssertJSwingJUnitTestCase {
 
     @Test
     public void shouldOpenAnalyseViewFromMenu() {
-        // Click menu item to open Analyse view using helper for reliability
-        clickMenu("Datei", "Analyse");
+        // Click menu item to open Analyse view (now in Analyse submenu)
+        clickMenu("Datei", "Analyse", "Analyse");
 
         // Verify internal frame was created
         JInternalFrameFixture internalFrame = window.internalFrame(

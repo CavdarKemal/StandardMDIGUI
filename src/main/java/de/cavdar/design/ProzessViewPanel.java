@@ -36,9 +36,11 @@ public class ProzessViewPanel extends BaseViewPanel {
 
     private void setupToolbarComponents() {
         btnStart = new JButton("Start");
+        btnStart.setName("Start");
         viewToolbar.add(btnStart);
 
         btnClear = new JButton("Log löschen");
+        btnClear.setName("Log löschen");
         viewToolbar.add(btnClear);
     }
 

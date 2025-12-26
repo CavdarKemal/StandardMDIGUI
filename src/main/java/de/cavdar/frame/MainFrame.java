@@ -11,7 +11,9 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -37,6 +39,11 @@ public class MainFrame extends JFrame {
     private JMenu viewMenu;
     private JToolBar mainToolbar;
     private final List<ViewRegistration> registeredViews = new ArrayList<>();
+    private final Map<String, JMenu> groupMenus = new LinkedHashMap<>();
+
+    // Split pane references for persistence
+    private JSplitPane leftSplit;
+    private JSplitPane mainSplit;
 
     /**
      * Holds registration info for a view type.
@@ -47,7 +54,8 @@ public class MainFrame extends JFrame {
             String toolbarLabel,
             Icon icon,
             KeyStroke shortcut,
-            String tooltip
+            String tooltip,
+            String menuGroup
     ) {}
 
     /**
@@ -75,6 +83,15 @@ public class MainFrame extends JFrame {
         add(mainToolbar, BorderLayout.NORTH);
         add(createMainSplitPane(), BorderLayout.CENTER);
 
+        // Restore split divider positions after window is shown
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                restoreSplitDividers();
+                removeComponentListener(this);
+            }
+        });
+
         this.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent e) {
@@ -84,6 +101,8 @@ public class MainFrame extends JFrame {
                 cfg.setProperty("LAST_WINDOW_HEIGHT", String.valueOf(getHeight()));
                 cfg.setProperty("LAST_WINDOW_X_POS", String.valueOf(getX()));
                 cfg.setProperty("LAST_WINDOW_Y_POS", String.valueOf(getY()));
+                cfg.setProperty("LAST_LEFT_SPLIT_DIVIDER", String.valueOf(leftSplit.getDividerLocation()));
+                cfg.setProperty("LAST_MAIN_SPLIT_DIVIDER", String.valueOf(mainSplit.getDividerLocation()));
                 cfg.save();
                 System.exit(0);
             }
@@ -108,7 +127,8 @@ public class MainFrame extends JFrame {
                 tempView.getToolbarLabel(),
                 tempView.getIcon(),
                 tempView.getKeyboardShortcut(),
-                tempView.getToolbarTooltip()
+                tempView.getToolbarTooltip(),
+                tempView.getMenuGroup()
         );
 
         // Dispose temporary instance
@@ -129,6 +149,7 @@ public class MainFrame extends JFrame {
 
     private void addViewToMenu(ViewRegistration reg) {
         JMenuItem item = new JMenuItem(reg.menuLabel());
+        item.setName(reg.menuLabel());
         if (reg.icon() != null) {
             item.setIcon(reg.icon());
         }
@@ -136,7 +157,23 @@ public class MainFrame extends JFrame {
             item.setAccelerator(reg.shortcut());
         }
         item.addActionListener(e -> desktopPanel.openView(reg.supplier().get()));
-        viewMenu.add(item);
+
+        // Determine where to add the menu item
+        if (reg.menuGroup() != null && !reg.menuGroup().isEmpty()) {
+            // Add to group submenu
+            JMenu groupMenu = groupMenus.computeIfAbsent(reg.menuGroup(), groupName -> {
+                JMenu newMenu = new JMenu(groupName);
+                // Insert before separator (at position = menu count - 2: separator + Beenden)
+                int insertPos = Math.max(0, viewMenu.getMenuComponentCount() - 2);
+                viewMenu.insert(newMenu, insertPos);
+                return newMenu;
+            });
+            groupMenu.add(item);
+        } else {
+            // Add directly to viewMenu before separator
+            int insertPos = Math.max(0, viewMenu.getMenuComponentCount() - 2);
+            viewMenu.insert(item, insertPos);
+        }
     }
 
     private void addViewToToolbar(ViewRegistration reg) {
@@ -147,6 +184,7 @@ public class MainFrame extends JFrame {
         } else {
             btn = new JButton(reg.toolbarLabel());
         }
+        btn.setName(reg.toolbarLabel());
         if (reg.tooltip() != null) {
             btn.setToolTipText(reg.tooltip());
         }
@@ -156,20 +194,35 @@ public class MainFrame extends JFrame {
 
     private JSplitPane createMainSplitPane() {
         // Left side: Settings (top) + Tree (bottom)
-        JSplitPane leftSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        leftSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         leftSplit.setTopComponent(settingsPanel);
         leftSplit.setBottomComponent(treePanel);
-        leftSplit.setDividerLocation(350);
+        leftSplit.setDividerLocation(350);  // Default, will be restored from config
         leftSplit.setResizeWeight(0.0);
 
         // Main split: Left panels + Desktop
-        JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         mainSplit.setLeftComponent(leftSplit);
         mainSplit.setRightComponent(desktopPanel);
-        mainSplit.setDividerLocation(300);
+        mainSplit.setDividerLocation(300);  // Default, will be restored from config
         mainSplit.setResizeWeight(0.0);
 
         return mainSplit;
+    }
+
+    /**
+     * Restores split divider positions from configuration.
+     * Called after the window is shown to ensure proper component sizing.
+     */
+    private void restoreSplitDividers() {
+        int leftDivider = cfg.getInt("LAST_LEFT_SPLIT_DIVIDER", 350);
+        int mainDivider = cfg.getInt("LAST_MAIN_SPLIT_DIVIDER", 300);
+
+        SwingUtilities.invokeLater(() -> {
+            leftSplit.setDividerLocation(leftDivider);
+            mainSplit.setDividerLocation(mainDivider);
+            LOG.debug("Split dividers restored: left={}, main={}", leftDivider, mainDivider);
+        });
     }
 
     private void initWindow() {
@@ -238,10 +291,12 @@ public class MainFrame extends JFrame {
 
         // Datei menu with dynamically registered views
         JMenu fileMenu = new JMenu("Datei");
+        fileMenu.setName("Datei");
         viewMenu = fileMenu; // Reference for dynamic registration
 
         fileMenu.addSeparator();
         JMenuItem itemExit = new JMenuItem("Beenden");
+        itemExit.setName("Beenden");
         itemExit.addActionListener(e -> {
             dispatchEvent(new java.awt.event.WindowEvent(this, java.awt.event.WindowEvent.WINDOW_CLOSING));
         });
@@ -251,16 +306,20 @@ public class MainFrame extends JFrame {
 
         // Fenster menu
         JMenu windowMenu = new JMenu("Fenster");
+        windowMenu.setName("Fenster");
 
         JMenuItem itemCascade = new JMenuItem("Kaskadiert anordnen");
+        itemCascade.setName("Kaskadiert anordnen");
         itemCascade.addActionListener(e -> desktopPanel.layoutCascaded());
         windowMenu.add(itemCascade);
 
         JMenuItem itemTileHor = new JMenuItem("Nebeneinander anordnen");
+        itemTileHor.setName("Nebeneinander anordnen");
         itemTileHor.addActionListener(e -> desktopPanel.layoutTileVertical());
         windowMenu.add(itemTileHor);
 
         JMenuItem itemTileVer = new JMenuItem("Untereinander anordnen");
+        itemTileVer.setName("Untereinander anordnen");
         itemTileVer.addActionListener(e -> desktopPanel.layoutTileHorizontal());
         windowMenu.add(itemTileVer);
 

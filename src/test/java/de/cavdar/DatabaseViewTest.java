@@ -53,14 +53,14 @@ public class DatabaseViewTest extends AssertJSwingJUnitTestCase {
 
     @Test
     public void shouldHaveConnectionPanel() {
-        // Check for connection components
-        viewFixture.textBox().requireVisible(); // JDBC URL field
+        // Check for connection components by name
+        viewFixture.textBox("JDBC-URL").requireVisible();
         viewFixture.button("Verbinden").requireVisible();
     }
 
     @Test
     public void shouldHaveDriverComboBox() {
-        viewFixture.comboBox().requireVisible();
+        viewFixture.comboBox("Treiber").requireVisible();
     }
 
     @Test
@@ -90,7 +90,7 @@ public class DatabaseViewTest extends AssertJSwingJUnitTestCase {
 
     @Test
     public void shouldHaveResultsTable() {
-        viewFixture.table().requireVisible();
+        viewFixture.table("Ergebnisse").requireVisible();
     }
 
     @Test
@@ -98,7 +98,7 @@ public class DatabaseViewTest extends AssertJSwingJUnitTestCase {
         viewFixture.button("Leeren").click();
 
         // Table should be empty after clear
-        assertThat(viewFixture.table().rowCount()).isZero();
+        assertThat(viewFixture.table("Ergebnisse").rowCount()).isZero();
     }
 
     @Test
@@ -109,7 +109,7 @@ public class DatabaseViewTest extends AssertJSwingJUnitTestCase {
 
     @Test
     public void shouldHaveCommonJdbcDrivers() {
-        JComboBox<?> comboBox = viewFixture.comboBox().target();
+        JComboBox<?> comboBox = viewFixture.comboBox("Treiber").target();
         assertThat(comboBox.getItemCount()).isGreaterThan(0);
 
         // Check that common drivers are available

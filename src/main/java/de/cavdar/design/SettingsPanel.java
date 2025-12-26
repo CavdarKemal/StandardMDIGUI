@@ -183,6 +183,7 @@ public class SettingsPanel extends EmbeddablePanel implements ConnectionManager.
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JLabel label = new JLabel(labelText);
+        label.setName(labelText);
         label.setPreferredSize(new Dimension(100, label.getPreferredSize().height));
         row.add(label);
         row.add(Box.createHorizontalStrut(5));
@@ -208,6 +209,7 @@ public class SettingsPanel extends EmbeddablePanel implements ConnectionManager.
 
     private JCheckBox createManagedCheckBox(String label, String propertyKey) {
         JCheckBox cb = new JCheckBox(label, cfg.getBool(propertyKey));
+        cb.setName(label);
         cb.addActionListener(e -> {
             cfg.setProperty(propertyKey, String.valueOf(cb.isSelected()));
             cfg.save();

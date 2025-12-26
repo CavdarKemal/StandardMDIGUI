@@ -41,7 +41,9 @@ public class AppConfig {
                 "LAST_WINDOW_HEIGHT",
                 "LAST_WINDOW_WIDTH",
                 "LAST_WINDOW_X_POS",
-                "LAST_WINDOW_Y_POS"
+                "LAST_WINDOW_Y_POS",
+                "LAST_LEFT_SPLIT_DIVIDER",
+                "LAST_MAIN_SPLIT_DIVIDER"
         ));
 
         PROPERTY_GROUPS.put("LATEST - Last used values and selections", List.of(
@@ -138,6 +140,8 @@ public class AppConfig {
         props.setProperty("LAST_WINDOW_HEIGHT", "800");
         props.setProperty("LAST_WINDOW_X_POS", "100");
         props.setProperty("LAST_WINDOW_Y_POS", "100");
+        props.setProperty("LAST_LEFT_SPLIT_DIVIDER", "350");
+        props.setProperty("LAST_MAIN_SPLIT_DIVIDER", "300");
     }
 
     /**

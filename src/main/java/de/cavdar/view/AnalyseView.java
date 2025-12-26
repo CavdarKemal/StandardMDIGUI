@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 /**
  * View for data analysis and reporting.
@@ -50,6 +52,21 @@ public class AnalyseView extends BaseView {
 
     @Override
     public String getToolbarLabel() {
+        return "Analyse";
+    }
+
+    @Override
+    public KeyStroke getKeyboardShortcut() {
+        return KeyStroke.getKeyStroke(KeyEvent.VK_3, InputEvent.CTRL_DOWN_MASK);
+    }
+
+    @Override
+    public Icon getIcon() {
+        return UIManager.getIcon("Table.ascendingSortIcon");
+    }
+
+    @Override
+    public String getMenuGroup() {
         return "Analyse";
     }
 

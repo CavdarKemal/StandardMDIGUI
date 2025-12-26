@@ -79,6 +79,7 @@ public class DatabaseViewPanel extends BaseViewPanel {
         connectionPanel.add(new JLabel("Verbindung:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0; gbc.gridwidth = 2;
         cbConnections = new JComboBox<>();
+        cbConnections.setName("Verbindungen");
         connectionPanel.add(cbConnections, gbc);
 
         // Connection Name
@@ -86,6 +87,7 @@ public class DatabaseViewPanel extends BaseViewPanel {
         connectionPanel.add(new JLabel("Name:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0; gbc.gridwidth = 2;
         txtConnectionName = new JTextField(30);
+        txtConnectionName.setName("ConnectionName");
         connectionPanel.add(txtConnectionName, gbc);
 
         // Driver
@@ -93,6 +95,7 @@ public class DatabaseViewPanel extends BaseViewPanel {
         connectionPanel.add(new JLabel("Treiber:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0; gbc.gridwidth = 2;
         cbDriver = new JComboBox<>(DRIVERS);
+        cbDriver.setName("Treiber");
         cbDriver.setEditable(true);
         connectionPanel.add(cbDriver, gbc);
 
@@ -101,6 +104,7 @@ public class DatabaseViewPanel extends BaseViewPanel {
         connectionPanel.add(new JLabel("JDBC-URL:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0; gbc.gridwidth = 2;
         txtUrl = new JTextField("jdbc:postgresql://localhost:5432/postgres", 40);
+        txtUrl.setName("JDBC-URL");
         connectionPanel.add(txtUrl, gbc);
 
         // Username
@@ -108,6 +112,7 @@ public class DatabaseViewPanel extends BaseViewPanel {
         connectionPanel.add(new JLabel("Benutzer:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0; gbc.gridwidth = 2;
         txtUsername = new JTextField("postgres", 20);
+        txtUsername.setName("Benutzer");
         connectionPanel.add(txtUsername, gbc);
 
         // Password
@@ -115,21 +120,26 @@ public class DatabaseViewPanel extends BaseViewPanel {
         connectionPanel.add(new JLabel("Passwort:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0; gbc.gridwidth = 2;
         txtPassword = new JPasswordField(20);
+        txtPassword.setName("Passwort");
         connectionPanel.add(txtPassword, gbc);
 
         // Buttons Panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         btnConnect = new JButton("Verbinden");
+        btnConnect.setName("Verbinden");
         buttonPanel.add(btnConnect);
 
         btnSave = new JButton("Speichern");
+        btnSave.setName("Speichern");
         buttonPanel.add(btnSave);
 
         btnDelete = new JButton("Löschen");
+        btnDelete.setName("Löschen");
         buttonPanel.add(btnDelete);
 
         lblStatus = new JLabel("Nicht verbunden");
+        lblStatus.setName("Nicht verbunden");
         lblStatus.setForeground(Color.RED);
         buttonPanel.add(Box.createHorizontalStrut(20));
         buttonPanel.add(lblStatus);
@@ -151,10 +161,12 @@ public class DatabaseViewPanel extends BaseViewPanel {
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         btnExecute = new JButton("Ausführen");
+        btnExecute.setName("Ausführen");
         btnExecute.setEnabled(false);
         buttonPanel.add(btnExecute);
 
         btnClear = new JButton("Leeren");
+        btnClear.setName("Leeren");
         buttonPanel.add(btnClear);
 
         queryPanel.add(buttonPanel, BorderLayout.SOUTH);
@@ -168,6 +180,7 @@ public class DatabaseViewPanel extends BaseViewPanel {
 
         tableModel = new DefaultTableModel();
         tblResults = new JTable(tableModel);
+        tblResults.setName("Ergebnisse");
         tblResults.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         JScrollPane scrollPane = new JScrollPane(tblResults);
         scrollPane.setPreferredSize(new Dimension(850, 200));
