@@ -2,6 +2,7 @@ package de.cavdar.view;
 
 import de.cavdar.design.BaseViewPanel;
 import de.cavdar.design.SampleViewPanel;
+import de.cavdar.util.IconLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,7 +55,7 @@ public class SampleView extends BaseView {
 
     @Override
     public Icon getIcon() {
-        return UIManager.getIcon("FileView.fileIcon");
+        return IconLoader.load("client.png");
     }
 
     @Override

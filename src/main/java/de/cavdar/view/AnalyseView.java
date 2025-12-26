@@ -2,6 +2,7 @@ package de.cavdar.view;
 
 import de.cavdar.design.AnalyseViewPanel;
 import de.cavdar.design.BaseViewPanel;
+import de.cavdar.util.IconLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,7 @@ public class AnalyseView extends BaseView {
 
     @Override
     public Icon getIcon() {
-        return UIManager.getIcon("Table.ascendingSortIcon");
+        return IconLoader.load("table_sql.png");
     }
 
     @Override

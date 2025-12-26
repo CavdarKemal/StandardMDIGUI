@@ -2,6 +2,7 @@ package de.cavdar.view;
 
 import de.cavdar.design.BaseViewPanel;
 import de.cavdar.design.ProzessViewPanel;
+import de.cavdar.util.IconLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +61,7 @@ public class ProzessView extends BaseView {
 
     @Override
     public Icon getIcon() {
-        return UIManager.getIcon("FileChooser.detailsViewIcon");
+        return IconLoader.load("gear_run.png");
     }
 
     @Override

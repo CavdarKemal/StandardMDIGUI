@@ -5,6 +5,8 @@ import de.cavdar.design.TreeViewPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.cavdar.util.IconLoader;
+
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -223,7 +225,7 @@ public class TreeView extends BaseView {
 
     @Override
     public Icon getIcon() {
-        return UIManager.getIcon("Tree.openIcon");
+        return IconLoader.load("folder_view.png");
     }
 
     @Override

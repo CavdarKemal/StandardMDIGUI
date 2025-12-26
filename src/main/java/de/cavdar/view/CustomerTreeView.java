@@ -6,6 +6,8 @@ import de.cavdar.model.AppConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.cavdar.util.IconLoader;
+
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -182,7 +184,7 @@ public class CustomerTreeView extends TreeView {
 
     @Override
     public Icon getIcon() {
-        return UIManager.getIcon("FileView.directoryIcon");
+        return IconLoader.load("folder_cubes.png");
     }
 
     @Override
