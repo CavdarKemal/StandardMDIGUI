@@ -1,5 +1,7 @@
 package de.cavdar.design;
 
+import de.cavdar.util.IconLoader;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -80,7 +82,7 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
         leftToolbar.addSeparator();
 
         // Refresh button
-        btnRefresh = new JButton("Aktualisieren");
+        btnRefresh = new JButton("Aktualisieren", IconLoader.load("refresh.png"));
         leftToolbar.add(btnRefresh);
     }
 
@@ -93,16 +95,16 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
         txtSearch.setMaximumSize(new Dimension(150, 25));
         rightToolbar.add(txtSearch);
 
-        btnSearch = new JButton("Suchen");
+        btnSearch = new JButton("Suchen", IconLoader.load("folder_view.png"));
         rightToolbar.add(btnSearch);
 
         rightToolbar.addSeparator();
 
         // Action buttons
-        btnEdit = new JButton("Bearbeiten");
+        btnEdit = new JButton("Bearbeiten", IconLoader.load("folder_edit.png"));
         rightToolbar.add(btnEdit);
 
-        btnDelete = new JButton("Löschen");
+        btnDelete = new JButton("Löschen", IconLoader.load("folder_delete.png"));
         rightToolbar.add(btnDelete);
     }
 

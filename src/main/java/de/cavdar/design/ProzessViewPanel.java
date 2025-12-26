@@ -1,5 +1,7 @@
 package de.cavdar.design;
 
+import de.cavdar.util.IconLoader;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -35,11 +37,11 @@ public class ProzessViewPanel extends BaseViewPanel {
     }
 
     private void setupToolbarComponents() {
-        btnStart = new JButton("Start");
+        btnStart = new JButton("Start", IconLoader.load("gear_run.png"));
         btnStart.setName("Start");
         viewToolbar.add(btnStart);
 
-        btnClear = new JButton("Log löschen");
+        btnClear = new JButton("Log löschen", IconLoader.load("cancel.png"));
         btnClear.setName("Log löschen");
         viewToolbar.add(btnClear);
     }

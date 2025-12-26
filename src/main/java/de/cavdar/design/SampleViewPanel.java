@@ -1,5 +1,7 @@
 package de.cavdar.design;
 
+import de.cavdar.util.IconLoader;
+
 import javax.swing.*;
 
 /**
@@ -26,7 +28,7 @@ public class SampleViewPanel extends BaseViewPanel {
      */
     protected void initCustomComponents() {
         // Toolbar button
-        btnStart = new JButton("Start Prozess");
+        btnStart = new JButton("Start Prozess", IconLoader.load("gear_run.png"));
         btnStart.setName("Start Prozess");
         viewToolbar.add(btnStart);
 

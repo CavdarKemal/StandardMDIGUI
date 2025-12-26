@@ -1,5 +1,7 @@
 package de.cavdar.design;
 
+import de.cavdar.util.IconLoader;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -156,15 +158,15 @@ public class DatabaseViewPanel extends BaseViewPanel {
         // Buttons Panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
-        btnConnect = new JButton("Verbinden");
+        btnConnect = new JButton("Verbinden", IconLoader.load("ok.png"));
         btnConnect.setName("Verbinden");
         buttonPanel.add(btnConnect);
 
-        btnSave = new JButton("Speichern");
+        btnSave = new JButton("Speichern", IconLoader.load("save.png"));
         btnSave.setName("Speichern");
         buttonPanel.add(btnSave);
 
-        btnDelete = new JButton("Löschen");
+        btnDelete = new JButton("Löschen", IconLoader.load("cancel.png"));
         btnDelete.setName("Löschen");
         buttonPanel.add(btnDelete);
 
@@ -204,17 +206,17 @@ public class DatabaseViewPanel extends BaseViewPanel {
         txtQuery.setText("SELECT * FROM ");
         queryPanel.add(new JScrollPane(txtQuery), BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        btnExecute = new JButton("Ausführen");
+        JPanel queryButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        btnExecute = new JButton("Ausführen", IconLoader.load("gear_run.png"));
         btnExecute.setName("Ausführen");
         btnExecute.setEnabled(false);
-        buttonPanel.add(btnExecute);
+        queryButtonPanel.add(btnExecute);
 
-        btnClear = new JButton("Leeren");
+        btnClear = new JButton("Leeren", IconLoader.load("cancel.png"));
         btnClear.setName("Leeren");
-        buttonPanel.add(btnClear);
+        queryButtonPanel.add(btnClear);
 
-        queryPanel.add(buttonPanel, BorderLayout.SOUTH);
+        queryPanel.add(queryButtonPanel, BorderLayout.SOUTH);
     }
 
     private void createResultPanel() {

@@ -1,5 +1,7 @@
 package de.cavdar.design;
 
+import de.cavdar.util.IconLoader;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -38,15 +40,15 @@ public class AnalyseViewPanel extends BaseViewPanel {
     }
 
     private void setupToolbarComponents() {
-        btnAnalyse = new JButton("Analyse starten");
+        btnAnalyse = new JButton("Analyse starten", IconLoader.load("table_sql.png"));
         btnAnalyse.setName("Analyse starten");
         viewToolbar.add(btnAnalyse);
 
-        btnExport = new JButton("Exportieren");
+        btnExport = new JButton("Exportieren", IconLoader.load("folder_out.png"));
         btnExport.setName("Exportieren");
         viewToolbar.add(btnExport);
 
-        btnClear = new JButton("Löschen");
+        btnClear = new JButton("Löschen", IconLoader.load("cancel.png"));
         btnClear.setName("Löschen");
         viewToolbar.add(btnClear);
     }
