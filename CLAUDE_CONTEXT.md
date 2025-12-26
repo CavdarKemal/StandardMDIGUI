@@ -7,106 +7,58 @@
 **IDE:** IntelliJ IDEA
 **Ziel:** Modulares, erweiterbares Gerüst für zukünftige Programme
 
-## Letzte Session (26.12.2025 Nachmittag)
+## Letzte Session (26.12.2025 Abend)
 
-### Package-Reorganisation durchgeführt
-Die Klassen wurden in logische Packages aufgeteilt:
-- `de.cavdar.design` - GUI-Panel-Klassen (für GUI-Designer geeignet)
-- `de.cavdar.view` - Logik-Klassen (View-Controller)
-- `de.cavdar.frame` - MainFrame
-- `de.cavdar.model` - Datenmodelle (AppConfig, ConnectionInfo, ConfigEntry)
-- `de.cavdar.util` - Utilities (ConnectionManager)
-- `de.cavdar.exception` - Exceptions
+### Zusammenfassung der heutigen Änderungen
 
-### Panel/View Separation Pattern
-Jede View besteht aus zwei Klassen:
-1. **Panel-Klasse** (`design` Package): Nur GUI-Komponenten, keine Logik
-   - Kann von GUI-Designer generiert werden
-   - Alle Komponenten als `protected` Fields
-   - Getter für View-Zugriff
-   - `setName()` für alle testbaren Komponenten (AssertJ Swing)
+1. **Flaky Tests gefixt** - JUnit Vintage Engine + robuste `clickMenu()` Helper-Methode
+2. **4 neue Features** - Keyboard Shortcuts, Icons, Menu Groups, SplitPane Persistence
+3. **Custom Icons** - Eigene PNG-Icons statt UIManager-Icons
+4. **DatabaseView erweitert** - SplitPane-Layout mit Tabellen-Tree
 
-2. **View-Klasse** (`view` Package): Nur Logik und Event-Handler
-   - Erstellt Panel via `createPanel()`
-   - Registriert Listener in `setupToolbarActions()` und `setupListeners()`
+### Custom Icons (IconLoader)
+Neue Utility-Klasse `de.cavdar.util.IconLoader` lädt PNG-Icons aus `resources/icons/`:
 
-### Wichtige Änderungen für Tests (AssertJ Swing + Java 24)
+| View | Icon-Datei |
+|------|------------|
+| SampleView | `client.png` |
+| ProzessView | `gear_run.png` |
+| AnalyseView | `table_sql.png` |
+| TreeView | `folder_view.png` |
+| CustomerTreeView | `folder_cubes.png` |
 
-#### 1. JVM-Argumente in pom.xml (maven-surefire-plugin)
-```xml
-<argLine>
-    --add-opens java.base/java.util=ALL-UNNAMED
-    --add-opens java.base/java.lang=ALL-UNNAMED
-    --add-opens java.base/java.lang.reflect=ALL-UNNAMED
-    --add-opens java.desktop/java.awt=ALL-UNNAMED
-    --add-opens java.desktop/javax.swing=ALL-UNNAMED
-    --add-opens java.desktop/sun.awt=ALL-UNNAMED
-    --add-opens java.desktop/java.awt.event=ALL-UNNAMED
-</argLine>
-```
-
-#### 2. Komponenten-Namen für Tests
-Alle GUI-Komponenten brauchen `setName()` für AssertJ Swing:
 ```java
-btnStart = new JButton("Start Prozess");
-btnStart.setName("Start Prozess");  // Wichtig für Tests!
+// Verwendung:
+@Override
+public Icon getIcon() {
+    return IconLoader.load("client.png");
+}
 ```
 
-#### 3. Menü-Tests mit menuItemWithPath
-```java
-// Falsch (findet JMenu statt JMenuItem):
-window.menuItem("Datei").click();
-
-// Richtig:
-window.menuItemWithPath("Datei", "Analyse").click();
+### DatabaseView SplitPane-Layout
+Neues Layout unter "Verbindung":
+```
+┌─────────────────────────────────────────────────┐
+│ Verbindung (Connection Panel)                   │
+├──────────────┬──────────────────────────────────┤
+│ Tabellen     │ SQL-Abfrage                      │
+│ ├─Tabellen   │ ┌────────────────────────────┐   │
+│ │ ├─users    │ │ SELECT * FROM users        │   │
+│ │ └─orders   │ └────────────────────────────┘   │
+│ └─Views      ├──────────────────────────────────┤
+│   └─v_sales  │ Ergebnisse                       │
+│              │ ┌────────────────────────────┐   │
+│              │ │ id | name | email          │   │
+│              │ └────────────────────────────┘   │
+└──────────────┴──────────────────────────────────┘
 ```
 
-### Gruppierte config.properties
-AppConfig.save() schreibt Properties gruppiert mit Kommentaren:
-- WINDOW, LATEST, FLAGS, CUSTOMERS, URL, DATABASE, CONFIG, MISC
-- `PROPERTY_GROUPS` ist static final Map mit statischer Initialisierung
+**Funktionen:**
+- `loadTables()` - Lädt Tabellen/Views nach Verbindung aus DatabaseMetaData
+- `onTableSelected()` - Klick auf Tabelle füllt SQL-Query mit `SELECT * FROM tablename`
+- `clearTables()` - Leert Tree bei Disconnect
 
-### Neue Features implementiert (26.12.2025)
-
-#### 1. Keyboard Shortcuts für Views
-Jede View hat nun einen Tastaturkürzel:
-| View | Shortcut |
-|------|----------|
-| SampleView (Kunden Analyse) | Ctrl+1 |
-| ProzessView | Ctrl+2 |
-| AnalyseView | Ctrl+3 |
-| TreeView | Ctrl+4 |
-| CustomerTreeView | Ctrl+5 |
-
-#### 2. Icons für Menü/Toolbar
-Views verwenden UIManager-Icons:
-- SampleView: `FileView.fileIcon`
-- ProzessView: `FileChooser.detailsViewIcon`
-- AnalyseView: `Table.ascendingSortIcon`
-- TreeView: `Tree.openIcon`
-- CustomerTreeView: `FileView.directoryIcon`
-
-#### 3. View-Gruppen im Menü
-Das Datei-Menü hat nun Submenüs:
-- **Analyse**: Kunden Analyse, Analyse
-- **Verwaltung**: Prozess, Kunden Explorer
-- **Navigation**: Tree View
-
-#### 4. SplitPane Divider Persistence
-Divider-Positionen werden in `config.properties` gespeichert:
-- `LAST_LEFT_SPLIT_DIVIDER` - Vertikaler Split (Settings/Tree)
-- `LAST_MAIN_SPLIT_DIVIDER` - Horizontaler Split (Left/Desktop)
-
-### Gelöste Test-Probleme (26.12.2025)
-Die flaky Menü-Tests wurden gefixt durch:
-1. **JUnit Vintage Engine** zu pom.xml hinzugefügt (für JUnit 4 Tests mit AssertJ-Swing)
-2. **Helper-Methode `clickMenu()`** mit robustem Timing:
-   - `window.focus()` vor Menü-Interaktion
-   - `Pause.pause()` zwischen Events
-   - Erhöhter `delayBetweenEvents` während Menü-Interaktionen
-3. **Zusätzliche Pausen** nach Button-Clicks bevor Menü geöffnet wird
-
-## Projekt-Struktur (aktuell)
+## Package-Struktur
 ```
 src/main/java/de/cavdar/
 ├── design/                    # GUI-Panels (für GUI-Designer)
@@ -118,7 +70,7 @@ src/main/java/de/cavdar/
 │   ├── SampleViewPanel.java
 │   ├── ProzessViewPanel.java
 │   ├── AnalyseViewPanel.java
-│   ├── DatabaseViewPanel.java
+│   ├── DatabaseViewPanel.java # Mit SplitPanes und TableTree
 │   ├── TreeViewPanel.java     # Basis für Tree-Views
 │   └── CustomerTreeViewPanel.java
 │
@@ -128,12 +80,12 @@ src/main/java/de/cavdar/
 │   ├── SampleView.java
 │   ├── ProzessView.java
 │   ├── AnalyseView.java
-│   ├── DatabaseView.java
+│   ├── DatabaseView.java      # Mit Tabellen-Lade-Logik
 │   ├── TreeView.java          # Basis für Tree-Views
 │   └── CustomerTreeView.java
 │
 ├── frame/
-│   └── MainFrame.java         # Hauptfenster
+│   └── MainFrame.java         # Hauptfenster mit Menu Groups
 │
 ├── model/
 │   ├── AppConfig.java         # Singleton, gruppiertes Speichern
@@ -141,127 +93,110 @@ src/main/java/de/cavdar/
 │   └── ConfigEntry.java       # Record
 │
 ├── util/
-│   └── ConnectionManager.java # Zentrales Connection Management
+│   ├── ConnectionManager.java # Zentrales Connection Management
+│   └── IconLoader.java        # PNG-Icons aus Resources laden
 │
 └── exception/
     ├── ConfigurationException.java
     └── ViewException.java
 
+src/main/resources/
+└── icons/                     # PNG-Icons für Views
+    ├── client.png
+    ├── gear_run.png
+    ├── table_sql.png
+    ├── folder_view.png
+    └── folder_cubes.png
+
 src/test/java/de/cavdar/
-├── AppConfigTest.java         # Mit StandardCopyOption.REPLACE_EXISTING
-├── DatabaseViewTest.java      # Verwendet benannte Komponenten
+├── AppConfigTest.java
+├── DatabaseViewTest.java
 ├── DatabaseIntegrationTest.java
-├── MainFrameTest.java         # 2 flaky Menü-Tests
+├── MainFrameTest.java         # Mit robuster clickMenu() Methode
 ├── SampleViewTest.java
 └── util/
     └── ConfigEntryTest.java
-
-docs/
-└── klassendiagramm.puml       # PlantUML mit Package-Struktur
 ```
 
-## Architektur-Übersicht
+## Panel/View Separation Pattern
+Jede View besteht aus zwei Klassen:
+1. **Panel-Klasse** (`design` Package): Nur GUI-Komponenten, keine Logik
+2. **View-Klasse** (`view` Package): Nur Logik und Event-Handler
 
-### Vererbungshierarchie
-```
-JPanel
-└── EmbeddablePanel (abstract)
-    ├── SettingsPanel
-    ├── TreePanel
-    └── DesktopPanel
-
-JPanel
-└── BaseViewPanel
-    ├── SampleViewPanel
-    ├── ProzessViewPanel
-    ├── AnalyseViewPanel
-    ├── DatabaseViewPanel
-    └── TreeViewPanel
-        └── CustomerTreeViewPanel
-
-JInternalFrame
-└── BaseView (abstract, implements ViewInfo)
-    ├── SampleView
-    ├── ProzessView
-    ├── AnalyseView
-    ├── DatabaseView
-    └── TreeView
-        └── CustomerTreeView
-```
-
-### Neue View hinzufügen (Pattern)
+## ViewInfo Interface
+Jede View implementiert:
 ```java
-// 1. Panel-Klasse (design Package)
-public class MeineViewPanel extends BaseViewPanel {
-    protected JButton btnAction;
-
-    protected void initCustomComponents() {
-        btnAction = new JButton("Action");
-        btnAction.setName("Action");  // Für Tests!
-        viewToolbar.add(btnAction);
-    }
-
-    public JButton getActionButton() { return btnAction; }
+public interface ViewInfo {
+    String getMenuLabel();      // Menü-Text (default: getTitle())
+    String getToolbarLabel();   // Toolbar-Text (null = kein Button)
+    Icon getIcon();             // Icon für Menü/Toolbar
+    KeyStroke getKeyboardShortcut(); // Tastaturkürzel
+    String getMenuGroup();      // Submenu-Gruppe (default: null)
 }
+```
 
-// 2. View-Klasse (view Package)
-public class MeineView extends BaseView {
-    private MeineViewPanel meinePanel;
+## Keyboard Shortcuts
+| View | Shortcut |
+|------|----------|
+| SampleView (Kunden Analyse) | Ctrl+1 |
+| ProzessView | Ctrl+2 |
+| AnalyseView | Ctrl+3 |
+| TreeView | Ctrl+4 |
+| CustomerTreeView | Ctrl+5 |
 
-    public MeineView() {
-        super("Meine View");
-    }
+## Menu Groups (Submenüs)
+- **Analyse**: Kunden Analyse, Analyse
+- **Verwaltung**: Prozess, Kunden Explorer
+- **Navigation**: Tree View
 
-    @Override
-    protected BaseViewPanel createPanel() {
-        meinePanel = new MeineViewPanel();
-        return meinePanel;
-    }
+## SplitPane Divider Persistence
+In `config.properties`:
+- `LAST_LEFT_SPLIT_DIVIDER` - Vertikaler Split (Settings/Tree)
+- `LAST_MAIN_SPLIT_DIVIDER` - Horizontaler Split (Left/Desktop)
 
-    @Override
-    protected void setupToolbarActions() {
-        meinePanel.getActionButton().addActionListener(e -> doAction());
-    }
+## Test-Konfiguration (AssertJ Swing + Java 24)
 
-    @Override
-    public String getToolbarLabel() {
-        return "Meine";  // null = kein Toolbar-Button
-    }
+### JVM-Argumente in pom.xml
+```xml
+<argLine>
+    --add-opens java.base/java.util=ALL-UNNAMED
+    --add-opens java.base/java.lang=ALL-UNNAMED
+    --add-opens java.desktop/javax.swing=ALL-UNNAMED
+    ...
+</argLine>
+```
+
+### Robuste Menü-Tests
+```java
+private JMenuItemFixture clickMenu(String... path) {
+    robot().waitForIdle();
+    Pause.pause(300);
+    window.focus();
+    robot().waitForIdle();
+    robot().settings().delayBetweenEvents(150);
+    return window.menuItemWithPath(path).click();
 }
-
-// 3. In MainFrame.main() registrieren:
-frame.registerView(MeineView::new);
 ```
 
-### Layout-Struktur
+## Git-Historie (letzte Commits)
 ```
-MainFrame
-├── MenuBar (Datei: Views dynamisch, Fenster: Layout)
-├── Toolbar (Buttons für Views mit toolbarLabel)
-└── JSplitPane (horizontal)
-    ├── Left: JSplitPane (vertical)
-    │   ├── Top: SettingsPanel
-    │   └── Bottom: TreePanel
-    └── Right: DesktopPanel (JDesktopPane)
+ba3ba96 Add SplitPane layout and table tree to DatabaseView
+d2d70d6 Use custom PNG icons instead of UIManager icons
+094bff5 Add keyboard shortcuts, icons, menu groups, and split pane persistence
+e32f83b Fix flaky menu tests in MainFrameTest
 ```
-
-## Git-Konfiguration
-- **User:** Kemal Cavdar <kemal@cavdar.de>
-- **Branch:** master
 
 ## Lokale Umgebung
+- **Maven:** `C:\Program Files\JetBrains\IntelliJ IDEA 2025.2.4\plugins\maven\lib\maven3\bin\mvn.cmd`
 - **PostgreSQL 16:** Port 5432
-- **Maven:** Nicht im PATH (Build über IntelliJ oder vollständiger Pfad)
-- **Java:** 24 (mit Modul-Einschränkungen für Reflection)
+- **Java:** 24
 
 ## TODO / Nächste Schritte
-- [x] ~~2 flaky Menü-Tests in MainFrameTest fixen~~ ✓ Erledigt 26.12.2025
-- [x] ~~Keyboard Shortcuts für Views~~ ✓ Ctrl+1 bis Ctrl+5
-- [x] ~~Icons für Menü/Toolbar~~ ✓ UIManager-Icons
-- [x] ~~View-Gruppen im Menü (getMenuGroup())~~ ✓ Submenüs
-- [x] ~~Persistierung der SplitPane-Divider-Positionen~~ ✓ In config.properties
-- [ ] TreeView-Struktur verbessern (User wollte dies studieren)
-- [ ] DatabaseView weiter ausbauen
+- [ ] DatabaseView: Spalten-Info beim Aufklappen einer Tabelle anzeigen
+- [ ] DatabaseView: SQL-History/Favoriten
+- [ ] DatabaseView: Export-Funktionalität (CSV, Excel)
+- [ ] TreeView-Struktur verbessern
+- [ ] Weitere Views nach Bedarf
 
 ## Prompt zum Fortsetzen
 ```
