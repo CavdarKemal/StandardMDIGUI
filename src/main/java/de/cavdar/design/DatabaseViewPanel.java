@@ -2,6 +2,8 @@ package de.cavdar.design;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 
 /**
@@ -48,6 +50,16 @@ public class DatabaseViewPanel extends BaseViewPanel {
     protected DefaultTableModel tableModel;
     protected JLabel lblRowCount;
 
+    // Tree panel components (for database tables)
+    protected JPanel tableTreePanel;
+    protected JTree tableTree;
+    protected DefaultMutableTreeNode tableRootNode;
+    protected DefaultTreeModel tableTreeModel;
+
+    // Split panes
+    protected JSplitPane mainSplitPane;
+    protected JSplitPane rightSplitPane;
+
     public DatabaseViewPanel() {
         super();
         initCustomComponents();
@@ -60,9 +72,27 @@ public class DatabaseViewPanel extends BaseViewPanel {
         JPanel mainPanel = new JPanel(new BorderLayout(5, 5));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // Connection panel stays at top
         mainPanel.add(createConnectionPanel(), BorderLayout.NORTH);
-        mainPanel.add(createQueryPanel(), BorderLayout.CENTER);
-        mainPanel.add(createResultPanel(), BorderLayout.SOUTH);
+
+        // Create the table tree panel (left side)
+        createTableTreePanel();
+
+        // Create query and result panels
+        createQueryPanel();
+        createResultPanel();
+
+        // Right split pane: SQL query (top) / Results (bottom)
+        rightSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, queryPanel, resultPanel);
+        rightSplitPane.setDividerLocation(150);
+        rightSplitPane.setResizeWeight(0.3);
+
+        // Main split pane: Table tree (left) / Query+Results (right)
+        mainSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tableTreePanel, rightSplitPane);
+        mainSplitPane.setDividerLocation(200);
+        mainSplitPane.setResizeWeight(0.2);
+
+        mainPanel.add(mainSplitPane, BorderLayout.CENTER);
 
         contentPanel.add(mainPanel, BorderLayout.CENTER);
     }
@@ -150,7 +180,22 @@ public class DatabaseViewPanel extends BaseViewPanel {
         return connectionPanel;
     }
 
-    private JPanel createQueryPanel() {
+    private void createTableTreePanel() {
+        tableTreePanel = new JPanel(new BorderLayout());
+        tableTreePanel.setBorder(BorderFactory.createTitledBorder("Tabellen"));
+
+        tableRootNode = new DefaultMutableTreeNode("Datenbank");
+        tableTreeModel = new DefaultTreeModel(tableRootNode);
+        tableTree = new JTree(tableTreeModel);
+        tableTree.setName("TableTree");
+        tableTree.setRootVisible(true);
+        tableTree.setShowsRootHandles(true);
+
+        JScrollPane treeScroll = new JScrollPane(tableTree);
+        tableTreePanel.add(treeScroll, BorderLayout.CENTER);
+    }
+
+    private void createQueryPanel() {
         queryPanel = new JPanel(new BorderLayout(5, 5));
         queryPanel.setBorder(BorderFactory.createTitledBorder("SQL-Abfrage"));
 
@@ -170,11 +215,9 @@ public class DatabaseViewPanel extends BaseViewPanel {
         buttonPanel.add(btnClear);
 
         queryPanel.add(buttonPanel, BorderLayout.SOUTH);
-
-        return queryPanel;
     }
 
-    private JPanel createResultPanel() {
+    private void createResultPanel() {
         resultPanel = new JPanel(new BorderLayout(5, 5));
         resultPanel.setBorder(BorderFactory.createTitledBorder("Ergebnisse"));
 
@@ -183,13 +226,10 @@ public class DatabaseViewPanel extends BaseViewPanel {
         tblResults.setName("Ergebnisse");
         tblResults.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         JScrollPane scrollPane = new JScrollPane(tblResults);
-        scrollPane.setPreferredSize(new Dimension(850, 200));
         resultPanel.add(scrollPane, BorderLayout.CENTER);
 
         lblRowCount = new JLabel("0 Zeilen");
         resultPanel.add(lblRowCount, BorderLayout.SOUTH);
-
-        return resultPanel;
     }
 
     // ===== Getters for View access =====
@@ -256,5 +296,29 @@ public class DatabaseViewPanel extends BaseViewPanel {
 
     public JLabel getRowCountLabel() {
         return lblRowCount;
+    }
+
+    // ===== Tree Getters =====
+
+    public JTree getTableTree() {
+        return tableTree;
+    }
+
+    public DefaultMutableTreeNode getTableRootNode() {
+        return tableRootNode;
+    }
+
+    public DefaultTreeModel getTableTreeModel() {
+        return tableTreeModel;
+    }
+
+    // ===== SplitPane Getters =====
+
+    public JSplitPane getMainSplitPane() {
+        return mainSplitPane;
+    }
+
+    public JSplitPane getRightSplitPane() {
+        return rightSplitPane;
     }
 }

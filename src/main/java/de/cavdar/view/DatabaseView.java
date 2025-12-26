@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.sql.*;
 import java.util.List;
@@ -89,6 +90,9 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
         // Query buttons
         dbPanel.getExecuteButton().addActionListener(e -> executeQuery());
         dbPanel.getClearButton().addActionListener(e -> clearQuery());
+
+        // Table tree selection
+        dbPanel.getTableTree().addTreeSelectionListener(e -> onTableSelected());
     }
 
     @Override
@@ -215,6 +219,7 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
                     dbPanel.getStatusLabel().setForeground(new Color(0, 128, 0));
                     dbPanel.getConnectButton().setText("Trennen");
                     dbPanel.getExecuteButton().setEnabled(true);
+                    loadTables();
                     LOG.info("Database connection established");
                 });
             } catch (ClassNotFoundException e) {
@@ -252,6 +257,93 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
             dbPanel.getStatusLabel().setForeground(Color.RED);
             dbPanel.getConnectButton().setText("Verbinden");
             dbPanel.getExecuteButton().setEnabled(false);
+            clearTables();
+        }
+    }
+
+    // ===== Table Tree Logic =====
+
+    private void loadTables() {
+        DefaultMutableTreeNode root = dbPanel.getTableRootNode();
+        root.removeAllChildren();
+        root.setUserObject("Datenbank");
+
+        try {
+            DatabaseMetaData meta = connection.getMetaData();
+            String catalog = connection.getCatalog();
+            String schema = connection.getSchema();
+
+            // Create nodes for different table types
+            DefaultMutableTreeNode tablesNode = new DefaultMutableTreeNode("Tabellen");
+            DefaultMutableTreeNode viewsNode = new DefaultMutableTreeNode("Views");
+
+            // Load tables
+            try (ResultSet rs = meta.getTables(catalog, schema, "%", new String[]{"TABLE"})) {
+                while (rs.next()) {
+                    String tableName = rs.getString("TABLE_NAME");
+                    tablesNode.add(new DefaultMutableTreeNode(tableName));
+                }
+            }
+
+            // Load views
+            try (ResultSet rs = meta.getTables(catalog, schema, "%", new String[]{"VIEW"})) {
+                while (rs.next()) {
+                    String viewName = rs.getString("TABLE_NAME");
+                    viewsNode.add(new DefaultMutableTreeNode(viewName));
+                }
+            }
+
+            // Only add nodes if they have children
+            if (tablesNode.getChildCount() > 0) {
+                root.add(tablesNode);
+            }
+            if (viewsNode.getChildCount() > 0) {
+                root.add(viewsNode);
+            }
+
+            dbPanel.getTableTreeModel().reload();
+            expandTableTree();
+
+            LOG.info("Loaded {} tables and {} views",
+                    tablesNode.getChildCount(), viewsNode.getChildCount());
+
+        } catch (SQLException e) {
+            LOG.error("Failed to load tables", e);
+            root.add(new DefaultMutableTreeNode("Fehler: " + e.getMessage()));
+            dbPanel.getTableTreeModel().reload();
+        }
+    }
+
+    private void clearTables() {
+        DefaultMutableTreeNode root = dbPanel.getTableRootNode();
+        root.removeAllChildren();
+        root.setUserObject("Datenbank");
+        dbPanel.getTableTreeModel().reload();
+    }
+
+    private void expandTableTree() {
+        JTree tree = dbPanel.getTableTree();
+        for (int i = 0; i < tree.getRowCount(); i++) {
+            tree.expandRow(i);
+        }
+    }
+
+    private void onTableSelected() {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode)
+                dbPanel.getTableTree().getLastSelectedPathComponent();
+
+        if (node == null || node.getParent() == null) {
+            return;
+        }
+
+        // Check if this is a table or view node (child of "Tabellen" or "Views")
+        DefaultMutableTreeNode parent = (DefaultMutableTreeNode) node.getParent();
+        String parentName = parent.toString();
+
+        if ("Tabellen".equals(parentName) || "Views".equals(parentName)) {
+            String tableName = node.toString();
+            dbPanel.getQueryArea().setText("SELECT * FROM " + tableName);
+            LOG.debug("Selected table/view: {}", tableName);
         }
     }
 
