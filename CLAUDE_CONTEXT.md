@@ -187,8 +187,8 @@ e32f83b Fix flaky menu tests in MainFrameTest
 ```
 
 ## Lokale Umgebung
-- **Maven:** `C:\Tools\maven\apache-maven-3.9.12` (im PATH, `mvn` direkt aufrufbar)
-- **MAVEN_HOME:** `C:\Tools\maven\apache-maven-3.9.12`
+- **Maven:** `E:\Projekte\Tools\apache-maven-3.9.12` (im PATH, `mvn` direkt aufrufbar)
+- **MAVEN_HOME:** `E:\Projekte\Tools\apache-maven-3.9.12`
 - **PostgreSQL 16:** Port 5432
 - **Java:** 25
 
