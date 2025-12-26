@@ -15,6 +15,8 @@
 2. **4 neue Features** - Keyboard Shortcuts, Icons, Menu Groups, SplitPane Persistence
 3. **Custom Icons** - Eigene PNG-Icons statt UIManager-Icons
 4. **DatabaseView erweitert** - SplitPane-Layout mit Tabellen-Tree
+5. **Docker-Setup erstellt** - Dockerfile, docker-compose.yml, Startup-Scripts
+6. **Docker-Voraussetzungen installiert** - Docker Desktop 4.55.0, VcXsrv 21.1.16.1, WSL2
 
 ### Custom Icons (IconLoader)
 Neue Utility-Klasse `de.cavdar.util.IconLoader` lädt PNG-Icons aus `resources/icons/`:
@@ -235,9 +237,17 @@ target/StandardMDIGUI-1.0-SNAPSHOT-distribution.zip
 - **MAVEN_HOME:** `E:\Projekte\Tools\apache-maven-3.9.12`
 - **PostgreSQL 16:** Port 5432
 - **Java:** 25
-- **Docker Desktop:** Für Container-Ausführung
+- **Docker Desktop:** 4.55.0 (installiert via winget)
+- **VcXsrv:** 21.1.16.1 (X Server für Docker GUI, installiert via winget)
+- **WSL2:** Installiert (Neustart erforderlich für Aktivierung)
+
+### Docker starten (nach Neustart)
+1. **Docker Desktop** aus Startmenü starten
+2. **XLaunch** (VcXsrv) starten mit "Disable access control" ☑️
+3. `cd E:\Projekte\ClaudeCode\StandardMDIGUI\docker && start-windows.bat`
 
 ## TODO / Nächste Schritte
+- [ ] **Docker testen** - Nach Neustart Docker Desktop + VcXsrv starten, dann `start-windows.bat`
 - [ ] DatabaseView: Spalten-Info beim Aufklappen einer Tabelle anzeigen
 - [ ] DatabaseView: SQL-History/Favoriten
 - [ ] DatabaseView: Export-Funktionalität (CSV, Excel)
