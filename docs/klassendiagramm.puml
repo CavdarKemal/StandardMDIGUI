@@ -40,7 +40,9 @@ package "de.cavdar.view" as view_pkg {
         #createPanel(): BaseViewPanel
         #setupToolbarActions(): void
         -startProcess(): void
-        +getSamplePanel(): SampleViewPanel
+        +getIcon(): Icon
+        +getKeyboardShortcut(): KeyStroke
+        +getMenuGroup(): String
     }
 
     class ProzessView {
@@ -51,9 +53,9 @@ package "de.cavdar.view" as view_pkg {
         #setupToolbarActions(): void
         -startProcess(): void
         -clearLog(): void
-        -appendLog(String): void
-        +getToolbarLabel(): String
-        +getProzessPanel(): ProzessViewPanel
+        +getIcon(): Icon
+        +getKeyboardShortcut(): KeyStroke
+        +getMenuGroup(): String
     }
 
     class AnalyseView {
@@ -64,9 +66,9 @@ package "de.cavdar.view" as view_pkg {
         #setupToolbarActions(): void
         -startAnalysis(): void
         -exportData(): void
-        -clearTable(): void
-        +getToolbarLabel(): String
-        +getAnalysePanel(): AnalyseViewPanel
+        +getIcon(): Icon
+        +getKeyboardShortcut(): KeyStroke
+        +getMenuGroup(): String
     }
 
     class DatabaseView {
@@ -76,13 +78,15 @@ package "de.cavdar.view" as view_pkg {
         +DatabaseView()
         +DatabaseView(String)
         #createPanel(): BaseViewPanel
-        #setupToolbarActions(): void
         #setupListeners(): void
         -connect(): void
         -disconnect(): void
         -executeQuery(): void
+        -loadTables(): void
+        -clearTables(): void
+        -expandTableTree(): void
+        -onTableSelected(): void
         +onConnectionsChanged(): void
-        +getDatabasePanel(): DatabaseViewPanel
     }
 
     class TreeView {
@@ -92,14 +96,13 @@ package "de.cavdar.view" as view_pkg {
         +TreeView(String)
         #createPanel(): BaseViewPanel
         #setupToolbarActions(): void
-        #setupLeftToolbarControls(): void
-        #setupRightToolbarControls(): void
-        #setupTabs(): void
         +addNode(String): DefaultMutableTreeNode
         +clearTree(): void
         +refreshTree(): void
         +expandAll(): void
-        +getToolbarLabel(): String
+        +getIcon(): Icon
+        +getKeyboardShortcut(): KeyStroke
+        +getMenuGroup(): String
     }
 
     class CustomerTreeView {
@@ -113,10 +116,9 @@ package "de.cavdar.view" as view_pkg {
         -onTreeSelection(): void
         -applyFilter(): void
         -performSearch(): void
-        -editSelected(): void
-        -deleteSelected(): void
-        +getMenuLabel(): String
-        +getToolbarLabel(): String
+        +getIcon(): Icon
+        +getKeyboardShortcut(): KeyStroke
+        +getMenuGroup(): String
     }
 }
 
@@ -142,7 +144,6 @@ package "de.cavdar.design" as design_pkg {
         +getSelectedConnection(): String
         +onConnectionsChanged(): void
         #initializePanel(): void
-        +dispose(): void
     }
 
     class TreePanel {
@@ -183,7 +184,6 @@ package "de.cavdar.design" as design_pkg {
         +getContentPanel(): JPanel
         +getProgressBar(): JProgressBar
         +getCancelButton(): JButton
-        +getStatusPanel(): JPanel
     }
 
     class SampleViewPanel {
@@ -220,35 +220,46 @@ package "de.cavdar.design" as design_pkg {
         +getAnalyseButton(): JButton
         +getExportButton(): JButton
         +getClearButton(): JButton
-        +getResultTable(): JTable
         +getTableModel(): DefaultTableModel
     }
 
     class DatabaseViewPanel {
+        #connectionPanel: JPanel
         #cbConnections: JComboBox<String>
         #txtConnectionName: JTextField
         #txtUrl: JTextField
-        #txtUsername: JTextField
-        #txtPassword: JPasswordField
         #cbDriver: JComboBox<String>
         #btnConnect: JButton
         #btnSave: JButton
         #btnDelete: JButton
         #lblStatus: JLabel
+        #queryPanel: JPanel
         #txtQuery: JTextArea
         #btnExecute: JButton
-        #btnClear: JButton
+        #resultPanel: JPanel
         #tblResults: JTable
         #tableModel: DefaultTableModel
-        #lblRowCount: JLabel
+        #tableTreePanel: JPanel
+        #tableTree: JTree
+        #tableRootNode: DefaultMutableTreeNode
+        #tableTreeModel: DefaultTreeModel
+        #mainSplitPane: JSplitPane
+        #rightSplitPane: JSplitPane
         __
         +DatabaseViewPanel()
         #initCustomComponents(): void
-        +getConnectionsComboBox(): JComboBox
+        -createConnectionPanel(): JPanel
+        -createTableTreePanel(): void
+        -createQueryPanel(): void
+        -createResultPanel(): void
+        +getTableTree(): JTree
+        +getTableRootNode(): DefaultMutableTreeNode
+        +getTableTreeModel(): DefaultTreeModel
+        +getMainSplitPane(): JSplitPane
+        +getRightSplitPane(): JSplitPane
         +getConnectButton(): JButton
-        +getQueryArea(): JTextArea
         +getExecuteButton(): JButton
-        +getResultsTable(): JTable
+        +getQueryArea(): JTextArea
         +getTableModel(): DefaultTableModel
     }
 
@@ -283,7 +294,6 @@ package "de.cavdar.design" as design_pkg {
         #btnEdit: JButton
         #btnDelete: JButton
         #detailsArea: JTextArea
-        #dataTable: JTable
         __
         +CustomerTreeViewPanel()
         #initCustomComponents(): void
@@ -308,6 +318,9 @@ package "de.cavdar.frame" as frame_pkg {
         -viewMenu: JMenu
         -mainToolbar: JToolBar
         -registeredViews: List<ViewRegistration>
+        -groupMenus: Map<String, JMenu>
+        -leftSplit: JSplitPane
+        -mainSplit: JSplitPane
         __
         +MainFrame()
         +registerView(Supplier<BaseView>): void
@@ -316,11 +329,24 @@ package "de.cavdar.frame" as frame_pkg {
         -createMenuBar(): JMenuBar
         -createMainToolbar(): JToolBar
         -createMainSplitPane(): JSplitPane
+        -restoreSplitDividers(): void
         +getDesktopPanel(): DesktopPanel
         +getSettingsPanel(): SettingsPanel
         +getTreePanel(): TreePanel
         +{static} main(String[]): void
     }
+
+    class ViewRegistration <<record>> {
+        +supplier: Supplier<BaseView>
+        +menuLabel: String
+        +toolbarLabel: String
+        +icon: Icon
+        +shortcut: KeyStroke
+        +tooltip: String
+        +menuGroup: String
+    }
+
+    MainFrame +-- ViewRegistration : inner
 }
 
 ' ========== PACKAGE: de.cavdar.model ==========
@@ -384,8 +410,12 @@ package "de.cavdar.util" as util_pkg {
         +{static} deleteConnection(String): boolean
         +{static} addListener(ConnectionListener): void
         +{static} removeListener(ConnectionListener): void
-        +{static} getLastConnectionName(): String
-        +{static} setLastConnectionName(String): void
+    }
+
+    class IconLoader <<static>> {
+        -{static} ICONS_PATH: String = "icons/"
+        __
+        +{static} load(String): Icon
     }
 
     ConnectionManager +-- ConnectionListener : inner
@@ -463,5 +493,12 @@ MainFrame ..> AppConfig
 SettingsPanel ..> AppConfig
 TreePanel ..> AppConfig
 CustomerTreeView ..> AppConfig
+
+' Icon dependencies
+SampleView ..> IconLoader : uses
+ProzessView ..> IconLoader : uses
+AnalyseView ..> IconLoader : uses
+TreeView ..> IconLoader : uses
+CustomerTreeView ..> IconLoader : uses
 
 @enduml
