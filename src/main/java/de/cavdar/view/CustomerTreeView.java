@@ -22,6 +22,7 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -35,6 +36,10 @@ import java.util.List;
  */
 public class CustomerTreeView extends TreeView {
     private static final Logger LOG = LoggerFactory.getLogger(CustomerTreeView.class);
+    private static final String LAST_LOAD_DIRECTORY_KEY = "LAST_LOAD_DIRECTORY";
+    private static final String LOAD_DIRECTORIES_KEY = "LOAD_DIRECTORIES";
+    private static final String DIRECTORY_SEPARATOR = ";";
+    private static final int MAX_DIRECTORY_HISTORY = 10;
 
     private final AppConfig cfg = AppConfig.getInstance();
     private CustomerTreeViewPanel customerPanel;
@@ -115,12 +120,25 @@ public class CustomerTreeView extends TreeView {
         chooser.setDialogTitle("Testdaten laden");
         chooser.setFileFilter(new FileNameExtensionFilter("JSON-Dateien (*.json)", "json"));
 
+        // Set initial directory from config
+        String lastDir = cfg.getProperty(LAST_LOAD_DIRECTORY_KEY);
+        if (!lastDir.isEmpty()) {
+            File dir = new File(lastDir);
+            if (dir.exists() && dir.isDirectory()) {
+                chooser.setCurrentDirectory(dir);
+            }
+        }
+
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
                 currentFile = chooser.getSelectedFile();
                 customers = TestDataLoader.loadFromJson(currentFile);
                 buildTree();
                 expandAll();
+
+                // Save directory to config
+                saveDirectoryToConfig(currentFile.getParentFile());
+
                 JOptionPane.showMessageDialog(this,
                         customers.size() + " Kunden geladen.",
                         "Laden erfolgreich", JOptionPane.INFORMATION_MESSAGE);
@@ -145,9 +163,17 @@ public class CustomerTreeView extends TreeView {
         chooser.setDialogTitle("Testdaten speichern");
         chooser.setFileFilter(new FileNameExtensionFilter("JSON-Dateien (*.json)", "json"));
 
+        // Set initial directory from config or current file
         if (currentFile != null) {
             chooser.setSelectedFile(currentFile);
         } else {
+            String lastDir = cfg.getProperty(LAST_LOAD_DIRECTORY_KEY);
+            if (!lastDir.isEmpty()) {
+                File dir = new File(lastDir);
+                if (dir.exists() && dir.isDirectory()) {
+                    chooser.setCurrentDirectory(dir);
+                }
+            }
             chooser.setSelectedFile(new File("testdata.json"));
         }
 
@@ -160,6 +186,10 @@ public class CustomerTreeView extends TreeView {
             try {
                 TestDataLoader.saveToJson(customers, file);
                 currentFile = file;
+
+                // Save directory to config
+                saveDirectoryToConfig(file.getParentFile());
+
                 JOptionPane.showMessageDialog(this,
                         customers.size() + " Kunden gespeichert.",
                         "Speichern erfolgreich", JOptionPane.INFORMATION_MESSAGE);
@@ -170,6 +200,44 @@ public class CustomerTreeView extends TreeView {
                         "Speicherfehler", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+
+    /**
+     * Saves the directory to config as last used and adds to history.
+     */
+    private void saveDirectoryToConfig(File directory) {
+        if (directory == null || !directory.isDirectory()) {
+            return;
+        }
+
+        String dirPath = directory.getAbsolutePath();
+
+        // Save as last used directory
+        cfg.setProperty(LAST_LOAD_DIRECTORY_KEY, dirPath);
+
+        // Add to directory history
+        String historyData = cfg.getProperty(LOAD_DIRECTORIES_KEY);
+        LinkedHashSet<String> history = new LinkedHashSet<>();
+        history.add(dirPath); // Add new one first
+
+        if (!historyData.isEmpty()) {
+            for (String dir : historyData.split(DIRECTORY_SEPARATOR)) {
+                if (!dir.trim().isEmpty() && !dir.trim().equals(dirPath)) {
+                    history.add(dir.trim());
+                }
+            }
+        }
+
+        // Limit history size
+        List<String> historyList = new ArrayList<>(history);
+        if (historyList.size() > MAX_DIRECTORY_HISTORY) {
+            historyList = historyList.subList(0, MAX_DIRECTORY_HISTORY);
+        }
+
+        cfg.setProperty(LOAD_DIRECTORIES_KEY, String.join(DIRECTORY_SEPARATOR, historyList));
+        cfg.save();
+
+        LOG.debug("Saved directory to config: {}", dirPath);
     }
 
     // ===== Tree Building =====
