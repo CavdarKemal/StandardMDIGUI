@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,6 +39,9 @@ public class MainFrame extends JFrame {
 
     private JMenu viewMenu;
     private JToolBar mainToolbar;
+    private JComboBox<String> configComboBox;
+    private File configDirectory;
+    private String currentConfigName;
     private final List<ViewRegistration> registeredViews = new ArrayList<>();
     private final Map<String, JMenu> groupMenus = new LinkedHashMap<>();
 
@@ -77,6 +81,9 @@ public class MainFrame extends JFrame {
 
         // Create toolbar first (views will add buttons)
         mainToolbar = new JToolBar();
+
+        // Add config selector to toolbar
+        initConfigSelector();
 
         // Build menu bar
         setJMenuBar(createMenuBar());
@@ -355,11 +362,127 @@ public class MainFrame extends JFrame {
     }
 
     /**
+     * Initializes the config selector ComboBox in the toolbar.
+     */
+    private void initConfigSelector() {
+        // Determine config directory
+        File dockerConfigDir = new File("/app/config");
+        if (dockerConfigDir.exists() && dockerConfigDir.isDirectory()) {
+            configDirectory = dockerConfigDir;
+        } else {
+            configDirectory = new File(System.getProperty("user.dir"));
+        }
+
+        // Determine current config name from path
+        String configPath = cfg.getFilePath();
+        currentConfigName = new File(configPath).getName();
+
+        // Create ComboBox
+        mainToolbar.add(new JLabel(" Config: "));
+        configComboBox = new JComboBox<>();
+        configComboBox.setName("ConfigSelector");
+        configComboBox.setMaximumSize(new Dimension(200, 25));
+        configComboBox.setToolTipText("Konfigurationsdatei wählen");
+
+        refreshConfigList();
+
+        configComboBox.addActionListener(e -> {
+            if (e.getActionCommand().equals("comboBoxChanged")) {
+                String selected = (String) configComboBox.getSelectedItem();
+                if (selected != null && !selected.equals(currentConfigName)) {
+                    loadSelectedConfig(selected);
+                }
+            }
+        });
+
+        mainToolbar.add(configComboBox);
+        mainToolbar.add(Box.createHorizontalStrut(10));
+
+        // Add refresh button
+        JButton refreshBtn = new JButton("↻");
+        refreshBtn.setToolTipText("Config-Liste aktualisieren");
+        refreshBtn.setMargin(new Insets(2, 5, 2, 5));
+        refreshBtn.addActionListener(e -> refreshConfigList());
+        mainToolbar.add(refreshBtn);
+
+        mainToolbar.addSeparator();
+    }
+
+    /**
+     * Refreshes the list of available config files.
+     */
+    private void refreshConfigList() {
+        String previousSelection = (String) configComboBox.getSelectedItem();
+        configComboBox.removeAllItems();
+
+        File[] configFiles = configDirectory.listFiles((dir, name) ->
+                name.toLowerCase().endsWith(".properties"));
+
+        if (configFiles != null) {
+            java.util.Arrays.sort(configFiles, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+            for (File file : configFiles) {
+                configComboBox.addItem(file.getName());
+            }
+        }
+
+        // Select current config or previous selection
+        if (currentConfigName != null && containsItem(configComboBox, currentConfigName)) {
+            configComboBox.setSelectedItem(currentConfigName);
+        } else if (previousSelection != null && containsItem(configComboBox, previousSelection)) {
+            configComboBox.setSelectedItem(previousSelection);
+        }
+
+        LOG.debug("Found {} config files in {}", configComboBox.getItemCount(), configDirectory);
+    }
+
+    private boolean containsItem(JComboBox<String> combo, String item) {
+        for (int i = 0; i < combo.getItemCount(); i++) {
+            if (item.equals(combo.getItemAt(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Loads the selected configuration file.
+     */
+    private void loadSelectedConfig(String configName) {
+        File configFile = new File(configDirectory, configName);
+        LOG.info("Loading configuration: {}", configFile.getAbsolutePath());
+
+        if (cfg.loadFrom(configFile.getAbsolutePath())) {
+            currentConfigName = configName;
+
+            // Update window title
+            setTitle("MDI Application - " + cfg.getProperty("TEST-BASE-PATH") + " [" + configName + "]");
+
+            // Reload all settings from the new configuration
+            settingsPanel.reloadAllSettings();
+
+            LOG.info("Configuration loaded: {}", configName);
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Fehler beim Laden der Konfiguration:\n" + configFile.getAbsolutePath(),
+                    "Fehler",
+                    JOptionPane.ERROR_MESSAGE);
+            // Restore previous selection
+            configComboBox.setSelectedItem(currentConfigName);
+        }
+    }
+
+    /**
      * Application entry point.
      *
-     * @param args command line arguments (not used)
+     * @param args command line arguments: [config-file-path]
      */
     public static void main(String[] args) {
+        // Set config file path from command line argument (must be before AppConfig is loaded)
+        if (args.length > 0 && args[0] != null && !args[0].isEmpty()) {
+            System.setProperty("config.file", args[0]);
+            LOG.info("Config file set from argument: {}", args[0]);
+        }
+
         LOG.info("Starting MDI Application");
         SwingUtilities.invokeLater(() -> {
             MainFrame frame = new MainFrame();

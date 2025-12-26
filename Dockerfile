@@ -2,7 +2,7 @@
 # =====================================
 
 # Stage 1: Build
-FROM maven:3.9-eclipse-temurin-21 AS builder
+FROM maven:3.9-eclipse-temurin-23 AS builder
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ COPY deployment ./deployment
 RUN mvn clean package -DskipTests -q
 
 # Stage 2: Runtime with GUI support
-FROM eclipse-temurin:21-jdk
+FROM eclipse-temurin:23-jdk
 
 # Install X11 libraries for Swing GUI
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -39,11 +39,8 @@ COPY --from=builder /app/target/standard-mdi-gui-app-*.jar ./app.jar
 COPY --from=builder /app/target/lib ./lib
 COPY --from=builder /app/deployment/start.sh ./start.sh
 
-# Copy default config if exists
-COPY --from=builder /app/target/classes/config.properties ./config.properties 2>/dev/null || true
-
-# Set permissions
-RUN chown -R appuser:appuser /app && chmod +x start.sh
+# Create config directory for volume mount (must be owned by appuser)
+RUN mkdir -p /app/config && chown -R appuser:appuser /app && chmod +x start.sh
 
 USER appuser
 

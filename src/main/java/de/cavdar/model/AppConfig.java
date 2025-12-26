@@ -26,8 +26,29 @@ import java.util.Properties;
  */
 public class AppConfig {
     private static final Logger LOG = LoggerFactory.getLogger(AppConfig.class);
-    private static final String FILE_PATH = "config.properties";
-    private static final AppConfig INSTANCE = new AppConfig();
+    private static final String DEFAULT_FILE_PATH = "config.properties";
+    private static final String INITIAL_FILE_PATH;
+    private static final AppConfig INSTANCE;
+
+    static {
+        // Priority: 1. System property, 2. Environment variable, 3. Default
+        String sysProp = System.getProperty("config.file");
+        String envPath = System.getenv("CONFIG_FILE_PATH");
+
+        if (sysProp != null && !sysProp.isEmpty()) {
+            INITIAL_FILE_PATH = sysProp;
+            LOG.info("Using config path from system property: {}", INITIAL_FILE_PATH);
+        } else if (envPath != null && !envPath.isEmpty()) {
+            INITIAL_FILE_PATH = envPath;
+            LOG.info("Using config path from environment: {}", INITIAL_FILE_PATH);
+        } else {
+            INITIAL_FILE_PATH = DEFAULT_FILE_PATH;
+        }
+        INSTANCE = new AppConfig();
+    }
+
+    /** The currently active config file path (changes when loadFrom is called) */
+    private String currentFilePath = INITIAL_FILE_PATH;
 
     /**
      * Property groups for organized config file output.
@@ -116,15 +137,67 @@ public class AppConfig {
         return INSTANCE;
     }
 
-    private void load() {
-        try (InputStream is = new FileInputStream(FILE_PATH)) {
+    /**
+     * Returns the current config file path.
+     *
+     * @return the config file path
+     */
+    public String getFilePath() {
+        return currentFilePath;
+    }
+
+    /**
+     * Returns the initial config file path (from startup).
+     *
+     * @return the initial config file path
+     */
+    public static String getInitialFilePath() {
+        return INITIAL_FILE_PATH;
+    }
+
+    /**
+     * Loads configuration from a different file.
+     * Existing properties are cleared and replaced with the new file's content.
+     * Subsequent save() calls will write to this file.
+     *
+     * @param path the path to the config file to load
+     * @return true if loaded successfully, false otherwise
+     */
+    public boolean loadFrom(String path) {
+        File file = new File(path);
+        if (!file.exists() || !file.isFile()) {
+            LOG.error("Config file not found: {}", path);
+            return false;
+        }
+
+        try (InputStream is = new FileInputStream(file)) {
+            props.clear();
             props.load(is);
-            LOG.info("Configuration loaded successfully from {}", FILE_PATH);
+            currentFilePath = file.getAbsolutePath();
+            LOG.info("Configuration loaded from {} (now active for saving)", currentFilePath);
+            return true;
+        } catch (IOException e) {
+            LOG.error("Failed to load configuration from {}", path, e);
+            return false;
+        }
+    }
+
+    /**
+     * Reloads configuration from the current file.
+     */
+    public void reload() {
+        load();
+    }
+
+    private void load() {
+        try (InputStream is = new FileInputStream(currentFilePath)) {
+            props.load(is);
+            LOG.info("Configuration loaded successfully from {}", currentFilePath);
         } catch (FileNotFoundException e) {
-            LOG.warn("Configuration file not found: {}. Using default values.", FILE_PATH);
+            LOG.warn("Configuration file not found: {}. Using default values.", currentFilePath);
             initializeDefaults();
         } catch (IOException e) {
-            LOG.error("Failed to load configuration from {}", FILE_PATH, e);
+            LOG.error("Failed to load configuration from {}", currentFilePath, e);
             initializeDefaults();
         }
     }
@@ -215,13 +288,22 @@ public class AppConfig {
     }
 
     /**
-     * Saves the current configuration to file with grouped sections.
+     * Saves the current configuration to the currently active config file.
      *
      * @throws ConfigurationException if saving fails
      */
     public void save() {
+        // Ensure parent directory exists (for Docker volume)
+        File configFile = new File(currentFilePath);
+        File parentDir = configFile.getParentFile();
+        if (parentDir != null && !parentDir.exists()) {
+            if (parentDir.mkdirs()) {
+                LOG.info("Created config directory: {}", parentDir.getAbsolutePath());
+            }
+        }
+
         try (BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(FILE_PATH), StandardCharsets.ISO_8859_1))) {
+                new OutputStreamWriter(new FileOutputStream(currentFilePath), StandardCharsets.ISO_8859_1))) {
 
             // Write header
             String timestamp = LocalDateTime.now().format(
@@ -271,9 +353,9 @@ public class AppConfig {
                 }
             }
 
-            LOG.info("Configuration saved to {}", FILE_PATH);
+            LOG.info("Configuration saved to {}", currentFilePath);
         } catch (IOException e) {
-            LOG.error("Failed to save configuration to {}", FILE_PATH, e);
+            LOG.error("Failed to save configuration to {}", currentFilePath, e);
             throw new ConfigurationException("Failed to save configuration", e);
         }
     }

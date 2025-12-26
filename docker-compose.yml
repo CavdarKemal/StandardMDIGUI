@@ -38,11 +38,13 @@ services:
       DB_NAME: standardmdi
       DB_USER: postgres
       DB_PASSWORD: postgres
-      # Display for X11 forwarding
-      DISPLAY: ${DISPLAY:-host.docker.internal:0}
+      # Display for X11 forwarding (Windows: host.docker.internal:0)
+      DISPLAY: host.docker.internal:0
+      # Config file path for persistence
+      CONFIG_FILE_PATH: /app/config/config.properties
     volumes:
-      # Persist application config
-      - app_config:/app/config
+      # Config files (all .properties files available for loading)
+      - ./docker/config:/app/config
       # X11 socket (Linux)
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
     networks:
@@ -56,4 +58,3 @@ networks:
 
 volumes:
   postgres_data:
-  app_config:

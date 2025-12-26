@@ -88,6 +88,17 @@ public final class ConnectionManager {
     }
 
     /**
+     * Forces a reload of connections from the current configuration.
+     * Use this after loading a different config file.
+     */
+    public static synchronized void reloadConnections() {
+        loaded = false;
+        loadConnections();
+        notifyListeners();
+        LOG.info("Connections reloaded from configuration");
+    }
+
+    /**
      * Saves all connections to configuration.
      */
     public static synchronized void saveConnections() {

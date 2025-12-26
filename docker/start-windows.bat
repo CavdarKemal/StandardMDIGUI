@@ -2,6 +2,8 @@
 REM StandardMDIGUI Docker Starter for Windows
 REM ==========================================
 REM
+REM Usage: start-windows.bat [config-file]
+REM
 REM Prerequisites:
 REM   1. Docker Desktop installed and running
 REM   2. VcXsrv (X Server) installed: https://sourceforge.net/projects/vcxsrv/
@@ -31,6 +33,22 @@ if errorlevel 1 (
 
 REM Set DISPLAY for Windows
 set DISPLAY=host.docker.internal:0
+
+REM Handle config file argument
+if not "%~1"=="" (
+    echo Using config file: %~1
+    if not exist "%~1" (
+        echo ERROR: Config file not found: %~1
+        pause
+        exit /b 1
+    )
+    REM Create config directory if needed
+    if not exist "%~dp0config" mkdir "%~dp0config"
+    REM Copy config file to docker/config folder
+    copy /Y "%~1" "%~dp0config\config.properties" >nul
+    echo Config file copied to docker\config\config.properties
+    echo.
+)
 
 echo Starting PostgreSQL and Application...
 echo.

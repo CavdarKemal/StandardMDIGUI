@@ -3,20 +3,62 @@
 ## Projekt-Übersicht
 **Pfad:** `E:\Projekte\ClaudeCode\StandardMDIGUI`
 **Typ:** Java Swing MDI-Anwendung (Multi-Document Interface)
-**Build:** Maven, Java 24
+**Build:** Maven, Java 23 (Docker-kompatibel)
 **IDE:** IntelliJ IDEA
 **Ziel:** Modulares, erweiterbares Gerüst für zukünftige Programme
 
-## Letzte Session (26.12.2025 Abend)
+## Letzte Session (26.12.2025 Abend - Teil 3)
 
-### Zusammenfassung der heutigen Änderungen
+### Zusammenfassung der Änderungen
 
+**Frühere Sessions:**
 1. **Flaky Tests gefixt** - JUnit Vintage Engine + robuste `clickMenu()` Helper-Methode
 2. **4 neue Features** - Keyboard Shortcuts, Icons, Menu Groups, SplitPane Persistence
 3. **Custom Icons** - Eigene PNG-Icons statt UIManager-Icons
 4. **DatabaseView erweitert** - SplitPane-Layout mit Tabellen-Tree
 5. **Docker-Setup erstellt** - Dockerfile, docker-compose.yml, Startup-Scripts
 6. **Docker-Voraussetzungen installiert** - Docker Desktop 4.55.0, VcXsrv 21.1.16.1, WSL2
+7. **Docker-Setup erfolgreich getestet** - App läuft in Container mit X11-Forwarding
+8. **Java 24 → 23** - Für Docker-Kompatibilität (Eclipse Temurin 23 verfügbar)
+9. **Spalten-Info beim Aufklappen** - Lazy Loading von Spalten mit Typ, Größe, NULL, PK-Markierung
+10. **Config-Persistenz in Docker** - Volume für `/app/config/config.properties`
+
+**Aktuelle Session:**
+1. **Config-Selector in Toolbar** - ComboBox zum Wechseln zwischen Config-Dateien
+2. **GUI-Reload bei Config-Wechsel** - Alle Einstellungen werden bei Config-Wechsel aktualisiert
+3. **Dynamischer Config-Speicherpfad** - Änderungen werden in die aktuell selektierte Config gespeichert
+
+### Config-Wechsel Feature (neu)
+
+**Problem:** Beim Wechsel der Config-Datei via ComboBox wurden DB_CONNECTIONS und andere Einstellungen nicht aktualisiert.
+
+**Lösung:**
+
+1. **ConnectionManager.reloadConnections()** - Neue Methode zum Neuladen der Verbindungen
+2. **SettingsPanel.reloadAllSettings()** - Aktualisiert alle GUI-Komponenten:
+   - DB-Verbindungen (ComboBox)
+   - Test Sources, Test Types, ITSQ Revisions (ComboBoxen)
+   - Alle Checkboxen (Dump, SFTP-Upload, etc.)
+3. **AppConfig.currentFilePath** - Verfolgt die aktuell aktive Config-Datei
+   - `loadFrom()` setzt `currentFilePath`
+   - `save()` speichert in `currentFilePath`
+
+**Verhalten:**
+| Aktion | Ergebnis |
+|--------|----------|
+| App startet mit `config.properties` | `currentFilePath = config.properties` |
+| Wechsel zu `default.config.properties` | GUI aktualisiert, `currentFilePath` geändert |
+| Neue DB-Verbindung erstellen | Wird in `default.config.properties` gespeichert |
+
+### Test-Configs (docker/config/)
+Zwei Config-Dateien mit unterschiedlichen Werten zum Testen:
+
+| Einstellung | config.properties | default.config.properties |
+|-------------|-------------------|---------------------------|
+| DB_CONNECTIONS | Default, Cavdar | LocalDB, DevDB |
+| TEST-SOURCES | ITSQ;LOCAL;REMOTE | LOCAL;REMOTE |
+| TEST-TYPES | PHASE1;PHASE2;PHASE1_AND_PHASE2 | UNIT;INTEGRATION;E2E |
+| ITSQ_REVISIONS | EINE_PHASEN;ZWEI_PHASEN | v1.0;v2.0;v3.0;v4.0 |
 
 ### Custom Icons (IconLoader)
 Neue Utility-Klasse `de.cavdar.util.IconLoader` lädt PNG-Icons aus `resources/icons/`:
@@ -59,6 +101,19 @@ Neues Layout unter "Verbindung":
 - `loadTables()` - Lädt Tabellen/Views nach Verbindung aus DatabaseMetaData
 - `onTableSelected()` - Klick auf Tabelle füllt SQL-Query mit `SELECT * FROM tablename`
 - `clearTables()` - Leert Tree bei Disconnect
+- `loadColumns()` - Lazy Loading von Spalten beim Aufklappen einer Tabelle
+
+**Spalten-Info (Lazy Loading):**
+```
+Tabellen
+└─ customers
+   ├─ 🔑 id (int4, 10)
+   ├─ name (varchar, 100, NULL)
+   ├─ email (varchar, 255, NULL)
+   └─ created_at (timestamp, 29, NULL)
+```
+- Primary Keys werden mit 🔑 markiert
+- Format: `spaltenname (TYP, größe[, NULL])`
 
 ## Package-Struktur
 ```
@@ -156,7 +211,48 @@ In `config.properties`:
 - `LAST_LEFT_SPLIT_DIVIDER` - Vertikaler Split (Settings/Tree)
 - `LAST_MAIN_SPLIT_DIVIDER` - Horizontaler Split (Left/Desktop)
 
-## Test-Konfiguration (AssertJ Swing + Java 24)
+## Konfigurationsdatei (AppConfig)
+
+### Speicherort-Priorität
+1. **Kommandozeilen-Argument:** `java -jar app.jar /pfad/zur/config.properties`
+2. **System Property:** `java -Dconfig.file=/pfad/zur/config.properties -jar app.jar`
+3. **Umgebungsvariable:** `CONFIG_FILE_PATH=/pfad/zur/config.properties`
+4. **Standard:** `config.properties` (im Arbeitsverzeichnis)
+
+### Beispiele
+```bash
+# Lokal mit eigener Config
+java -jar StandardMDIGUI.jar C:\Users\kemal\meine-config.properties
+
+# Mit System Property
+java -Dconfig.file=/opt/config/app.properties -jar StandardMDIGUI.jar
+
+# Docker (via Umgebungsvariable in docker-compose.yml)
+CONFIG_FILE_PATH=/app/config/config.properties
+```
+
+### Docker-Persistenz (Bind Mounts)
+| Host-Pfad | Container-Pfad | Zweck |
+|-----------|----------------|-------|
+| `docker/config/` | `/app/config/` | Aktive Config (wird beim Speichern aktualisiert) |
+| `docker/configs/` | `/app/configs/` | Zusätzliche Config-Dateien zum Laden |
+
+### Runtime Config laden (Menü)
+**Datei → Konfiguration laden...** öffnet einen Datei-Dialog:
+- In Docker: Startet in `/app/configs` (= `docker/configs/` auf Host)
+- Lokal: Startet im aktuellen Verzeichnis
+
+```
+docker/
+├── config/
+│   └── config.properties    # Aktive Konfiguration
+└── configs/
+    ├── dev.properties       # Entwicklung
+    ├── test.properties      # Test
+    └── prod.properties      # Produktion
+```
+
+## Test-Konfiguration (AssertJ Swing + Java 23)
 
 ### JVM-Argumente in pom.xml
 ```xml
@@ -207,7 +303,21 @@ docker-compose.yml      # PostgreSQL + Java-App Orchestrierung
 
 ### Container
 - **postgres** (PostgreSQL 16 Alpine): Port 5432, DB `standardmdi`
-- **app** (Java Swing): X11-Forwarding für GUI
+- **app** (Java 23 Swing): X11-Forwarding für GUI via VcXsrv
+
+### Verbindung zur Docker-Datenbank
+**Aus der Docker-App (DatabaseView):**
+| Feld | Wert |
+|------|------|
+| JDBC URL | `jdbc:postgresql://postgres:5432/standardmdi` |
+| Host | `postgres` (Container-Name, nicht localhost!) |
+| Port | `5432` |
+| Database | `standardmdi` |
+| User | `postgres` |
+| Password | `postgres` |
+
+**Von außen (z.B. DBeaver, lokale App):**
+- Host: `localhost`, Port: `5432`
 
 ### Beispieldaten (init-db.sql)
 - `customers` - Kundenstammdaten
@@ -215,10 +325,18 @@ docker-compose.yml      # PostgreSQL + Java-App Orchestrierung
 - `products` - Produkte
 - `v_order_summary` - View für Bestellübersicht
 
-### Schnellstart
+### Schnellstart (getestet)
 ```batch
-cd docker
-start-windows.bat  # Benötigt VcXsrv mit "Disable access control"
+# 1. Docker Desktop starten
+# 2. XLaunch starten mit "Disable access control" ☑️
+# 3. Container starten:
+docker-compose -f E:/Projekte/ClaudeCode/StandardMDIGUI/docker-compose.yml up -d
+
+# Logs anzeigen:
+docker-compose -f E:/Projekte/ClaudeCode/StandardMDIGUI/docker-compose.yml logs -f app
+
+# Container stoppen:
+docker-compose -f E:/Projekte/ClaudeCode/StandardMDIGUI/docker-compose.yml down
 ```
 
 ## Assembly/Distribution
@@ -247,8 +365,12 @@ target/StandardMDIGUI-1.0-SNAPSHOT-distribution.zip
 3. `cd E:\Projekte\ClaudeCode\StandardMDIGUI\docker && start-windows.bat`
 
 ## TODO / Nächste Schritte
-- [ ] **Docker testen** - Nach Neustart Docker Desktop + VcXsrv starten, dann `start-windows.bat`
-- [ ] DatabaseView: Spalten-Info beim Aufklappen einer Tabelle anzeigen
+- [x] ~~**Docker testen**~~ - Erfolgreich getestet (26.12.2025)
+- [x] ~~**Spalten-Info beim Aufklappen**~~ - Lazy Loading mit PK-Markierung (26.12.2025)
+- [x] ~~**Config-Persistenz in Docker**~~ - Volume + Umgebungsvariable (26.12.2025)
+- [x] ~~**Config-Pfad als Parameter**~~ - Kommandozeile, System Property, Env (26.12.2025)
+- [x] ~~**Config-Wechsel mit GUI-Reload**~~ - Alle Einstellungen werden aktualisiert (26.12.2025)
+- [x] ~~**Dynamischer Config-Speicherpfad**~~ - Speichert in aktuell selektierte Config (26.12.2025)
 - [ ] DatabaseView: SQL-History/Favoriten
 - [ ] DatabaseView: Export-Funktionalität (CSV, Excel)
 - [ ] TreeView-Struktur verbessern

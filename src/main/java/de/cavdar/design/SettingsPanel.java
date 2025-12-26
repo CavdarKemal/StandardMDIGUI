@@ -21,6 +21,14 @@ public class SettingsPanel extends EmbeddablePanel implements ConnectionManager.
 
     private AppConfig cfg;
     private JComboBox<String> cbDbConnections;
+    private JComboBox<String> cbSources;
+    private JComboBox<String> cbTypes;
+    private JComboBox<String> cbRevisions;
+    private JCheckBox chkDump;
+    private JCheckBox chkSftpUpload;
+    private JCheckBox chkExportProtokoll;
+    private JCheckBox chkUploadSynthetics;
+    private JCheckBox chkOnlyTestClz;
     private Runnable onOpenDatabaseView;
 
     /**
@@ -52,6 +60,71 @@ public class SettingsPanel extends EmbeddablePanel implements ConnectionManager.
     @Override
     public void onConnectionsChanged() {
         SwingUtilities.invokeLater(this::refreshDbConnections);
+    }
+
+    /**
+     * Reloads database connections from the configuration.
+     * Called when configuration file is changed at runtime.
+     */
+    public void reloadConnections() {
+        refreshDbConnections();
+    }
+
+    /**
+     * Reloads all settings from the configuration.
+     * Called when a different configuration file is loaded at runtime.
+     */
+    public void reloadAllSettings() {
+        LOG.info("Reloading all settings from configuration");
+
+        // Reload DB connections
+        ConnectionManager.reloadConnections();
+
+        // Reload Test Sources
+        if (cbSources != null) {
+            cbSources.removeAllItems();
+            for (String source : cfg.getArray("TEST-SOURCES")) {
+                cbSources.addItem(source);
+            }
+            cbSources.setSelectedItem(cfg.getProperty("LAST_TEST_SOURCE"));
+        }
+
+        // Reload Test Types
+        if (cbTypes != null) {
+            cbTypes.removeAllItems();
+            for (String type : cfg.getArray("TEST-TYPES")) {
+                cbTypes.addItem(type);
+            }
+            cbTypes.setSelectedItem(cfg.getProperty("LAST_TEST_TYPE"));
+        }
+
+        // Reload ITSQ Revisions
+        if (cbRevisions != null) {
+            cbRevisions.removeAllItems();
+            for (String rev : cfg.getArray("ITSQ_REVISIONS")) {
+                cbRevisions.addItem(rev);
+            }
+            cbRevisions.setSelectedItem(cfg.getProperty("LAST_ITSQ_REVISION"));
+        }
+
+        // Reload Checkboxes
+        if (chkDump != null) {
+            chkDump.setSelected(cfg.getBool("DUMP_IN_REST_CLIENT"));
+        }
+        if (chkSftpUpload != null) {
+            chkSftpUpload.setSelected(cfg.getBool("SFTP_UPLOAD_ACTIVE"));
+        }
+        if (chkExportProtokoll != null) {
+            chkExportProtokoll.setSelected(cfg.getBool("CHECK-EXPORT-PROTOKOLL-ACTIVE"));
+        }
+        if (chkUploadSynthetics != null) {
+            chkUploadSynthetics.setSelected(cfg.getBool("LAST_UPLOAD_SYNTHETICS"));
+        }
+        if (chkOnlyTestClz != null) {
+            chkOnlyTestClz.setSelected(cfg.getBool("LAST_USE_ONLY_TEST_CLZ"));
+        }
+
+        LOG.debug("All settings reloaded");
     }
 
     private void refreshDbConnections() {
@@ -124,7 +197,7 @@ public class SettingsPanel extends EmbeddablePanel implements ConnectionManager.
         content.add(Box.createVerticalStrut(5));
 
         // Test Sources - Label links
-        JComboBox<String> cbSources = new JComboBox<>(cfg.getArray("TEST-SOURCES"));
+        cbSources = new JComboBox<>(cfg.getArray("TEST-SOURCES"));
         cbSources.setSelectedItem(cfg.getProperty("LAST_TEST_SOURCE"));
         cbSources.addActionListener(e -> {
             cfg.setProperty("LAST_TEST_SOURCE", (String) cbSources.getSelectedItem());
@@ -134,7 +207,7 @@ public class SettingsPanel extends EmbeddablePanel implements ConnectionManager.
         content.add(Box.createVerticalStrut(5));
 
         // Test Types - Label links
-        JComboBox<String> cbTypes = new JComboBox<>(cfg.getArray("TEST-TYPES"));
+        cbTypes = new JComboBox<>(cfg.getArray("TEST-TYPES"));
         cbTypes.setSelectedItem(cfg.getProperty("LAST_TEST_TYPE"));
         cbTypes.addActionListener(e -> {
             cfg.setProperty("LAST_TEST_TYPE", (String) cbTypes.getSelectedItem());
@@ -144,24 +217,34 @@ public class SettingsPanel extends EmbeddablePanel implements ConnectionManager.
         content.add(Box.createVerticalStrut(5));
 
         // ITSQ Revisions - Label links
-        JComboBox<String> cbRev = new JComboBox<>(cfg.getArray("ITSQ_REVISIONS"));
-        cbRev.setSelectedItem(cfg.getProperty("LAST_ITSQ_REVISION"));
-        cbRev.addActionListener(e -> {
-            cfg.setProperty("LAST_ITSQ_REVISION", (String) cbRev.getSelectedItem());
+        cbRevisions = new JComboBox<>(cfg.getArray("ITSQ_REVISIONS"));
+        cbRevisions.setSelectedItem(cfg.getProperty("LAST_ITSQ_REVISION"));
+        cbRevisions.addActionListener(e -> {
+            cfg.setProperty("LAST_ITSQ_REVISION", (String) cbRevisions.getSelectedItem());
             cfg.save();
         });
-        content.add(createLabeledRow("ITSQ Revisions:", cbRev));
+        content.add(createLabeledRow("ITSQ Revisions:", cbRevisions));
 
         content.add(Box.createVerticalStrut(10));
 
         // Checkboxen in zwei Spalten
         JPanel checkboxPanel = new JPanel(new GridLayout(0, 2, 10, 5));
         checkboxPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        checkboxPanel.add(createManagedCheckBox("Dump", "DUMP_IN_REST_CLIENT"));
-        checkboxPanel.add(createManagedCheckBox("SFTP-Upload", "SFTP_UPLOAD_ACTIVE"));
-        checkboxPanel.add(createManagedCheckBox("Export Protokoll", "CHECK-EXPORT-PROTOKOLL-ACTIVE"));
-        checkboxPanel.add(createManagedCheckBox("Upload Synthetics", "LAST_UPLOAD_SYNTHETICS"));
-        checkboxPanel.add(createManagedCheckBox("Only Test Clz", "LAST_USE_ONLY_TEST_CLZ"));
+
+        chkDump = createManagedCheckBox("Dump", "DUMP_IN_REST_CLIENT");
+        checkboxPanel.add(chkDump);
+
+        chkSftpUpload = createManagedCheckBox("SFTP-Upload", "SFTP_UPLOAD_ACTIVE");
+        checkboxPanel.add(chkSftpUpload);
+
+        chkExportProtokoll = createManagedCheckBox("Export Protokoll", "CHECK-EXPORT-PROTOKOLL-ACTIVE");
+        checkboxPanel.add(chkExportProtokoll);
+
+        chkUploadSynthetics = createManagedCheckBox("Upload Synthetics", "LAST_UPLOAD_SYNTHETICS");
+        checkboxPanel.add(chkUploadSynthetics);
+
+        chkOnlyTestClz = createManagedCheckBox("Only Test Clz", "LAST_USE_ONLY_TEST_CLZ");
+        checkboxPanel.add(chkOnlyTestClz);
 
         // Wrapper damit GridLayout nicht die volle Breite einnimmt
         JPanel checkboxWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));

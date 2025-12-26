@@ -8,8 +8,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeWillExpandListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.ExpandVetoException;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.sql.*;
 import java.util.List;
@@ -30,6 +34,7 @@ import java.util.Vector;
 public class DatabaseView extends BaseView implements ConnectionManager.ConnectionListener {
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseView.class);
     private static final String NEW_CONNECTION = "<Neue Verbindung>";
+    private static final String LOADING_NODE = "Laden...";
 
     private DatabaseViewPanel dbPanel;
     private Connection connection;
@@ -93,6 +98,19 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
 
         // Table tree selection
         dbPanel.getTableTree().addTreeSelectionListener(e -> onTableSelected());
+
+        // Table tree expansion (lazy load columns)
+        dbPanel.getTableTree().addTreeWillExpandListener(new TreeWillExpandListener() {
+            @Override
+            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+                onTreeWillExpand(event.getPath());
+            }
+
+            @Override
+            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+                // Nothing to do on collapse
+            }
+        });
     }
 
     @Override
@@ -281,7 +299,10 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
             try (ResultSet rs = meta.getTables(catalog, schema, "%", new String[]{"TABLE"})) {
                 while (rs.next()) {
                     String tableName = rs.getString("TABLE_NAME");
-                    tablesNode.add(new DefaultMutableTreeNode(tableName));
+                    DefaultMutableTreeNode tableNode = new DefaultMutableTreeNode(tableName);
+                    // Add dummy node for lazy loading of columns
+                    tableNode.add(new DefaultMutableTreeNode(LOADING_NODE));
+                    tablesNode.add(tableNode);
                 }
             }
 
@@ -289,7 +310,10 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
             try (ResultSet rs = meta.getTables(catalog, schema, "%", new String[]{"VIEW"})) {
                 while (rs.next()) {
                     String viewName = rs.getString("TABLE_NAME");
-                    viewsNode.add(new DefaultMutableTreeNode(viewName));
+                    DefaultMutableTreeNode viewNode = new DefaultMutableTreeNode(viewName);
+                    // Add dummy node for lazy loading of columns
+                    viewNode.add(new DefaultMutableTreeNode(LOADING_NODE));
+                    viewsNode.add(viewNode);
                 }
             }
 
@@ -325,6 +349,101 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
         JTree tree = dbPanel.getTableTree();
         for (int i = 0; i < tree.getRowCount(); i++) {
             tree.expandRow(i);
+        }
+    }
+
+    /**
+     * Called when a tree node is about to be expanded.
+     * Loads columns for table/view nodes on demand.
+     */
+    private void onTreeWillExpand(TreePath path) {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+        if (node == null || node.getChildCount() == 0) {
+            return;
+        }
+
+        // Check if this node has only the dummy "Laden..." child
+        DefaultMutableTreeNode firstChild = (DefaultMutableTreeNode) node.getFirstChild();
+        if (!LOADING_NODE.equals(firstChild.getUserObject())) {
+            return; // Already loaded
+        }
+
+        // Check if parent is "Tabellen" or "Views"
+        DefaultMutableTreeNode parent = (DefaultMutableTreeNode) node.getParent();
+        if (parent == null) {
+            return;
+        }
+
+        String parentName = parent.toString();
+        if ("Tabellen".equals(parentName) || "Views".equals(parentName)) {
+            String tableName = node.toString();
+            loadColumns(node, tableName);
+        }
+    }
+
+    /**
+     * Loads column information for a table or view.
+     */
+    private void loadColumns(DefaultMutableTreeNode tableNode, String tableName) {
+        if (connection == null) {
+            return;
+        }
+
+        try {
+            DatabaseMetaData meta = connection.getMetaData();
+            String catalog = connection.getCatalog();
+            String schema = connection.getSchema();
+
+            // Remove dummy node
+            tableNode.removeAllChildren();
+
+            // Load columns
+            try (ResultSet rs = meta.getColumns(catalog, schema, tableName, "%")) {
+                while (rs.next()) {
+                    String columnName = rs.getString("COLUMN_NAME");
+                    String typeName = rs.getString("TYPE_NAME");
+                    int columnSize = rs.getInt("COLUMN_SIZE");
+                    int nullable = rs.getInt("NULLABLE");
+
+                    // Format: column_name (TYPE, size) or column_name (TYPE, size, NULL)
+                    StringBuilder columnInfo = new StringBuilder();
+                    columnInfo.append(columnName).append(" (").append(typeName);
+                    if (columnSize > 0) {
+                        columnInfo.append(", ").append(columnSize);
+                    }
+                    if (nullable == DatabaseMetaData.columnNullable) {
+                        columnInfo.append(", NULL");
+                    }
+                    columnInfo.append(")");
+
+                    tableNode.add(new DefaultMutableTreeNode(columnInfo.toString()));
+                }
+            }
+
+            // Load primary keys and mark them
+            try (ResultSet rs = meta.getPrimaryKeys(catalog, schema, tableName)) {
+                while (rs.next()) {
+                    String pkColumn = rs.getString("COLUMN_NAME");
+                    // Find and update the column node with PK marker
+                    for (int i = 0; i < tableNode.getChildCount(); i++) {
+                        DefaultMutableTreeNode colNode = (DefaultMutableTreeNode) tableNode.getChildAt(i);
+                        String colInfo = colNode.toString();
+                        if (colInfo.startsWith(pkColumn + " ")) {
+                            colNode.setUserObject("🔑 " + colInfo);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            dbPanel.getTableTreeModel().nodeStructureChanged(tableNode);
+            LOG.debug("Loaded {} columns for table {}", tableNode.getChildCount(), tableName);
+
+        } catch (SQLException e) {
+            LOG.error("Failed to load columns for table: {}", tableName, e);
+            tableNode.removeAllChildren();
+            tableNode.add(new DefaultMutableTreeNode("Fehler: " + e.getMessage()));
+            dbPanel.getTableTreeModel().nodeStructureChanged(tableNode);
         }
     }
 
