@@ -31,6 +31,9 @@
 5. **Export-Funktionalität** - CSV und Excel (HTML-Tabelle) Export für Query-Ergebnisse
 6. **CustomerTreeView komplett überarbeitet** - Hierarchisches Model mit Checkboxen
 7. **Directory-Persistenz** - Load/Save merkt sich letztes Verzeichnis
+8. **File-History ComboBox** - Zuletzt geladene Dateien in ComboBox
+9. **Verbesserte Selektion** - Blauer Hintergrund + weißer Text bei Auswahl
+10. **Kontextmenüs** - Rechtsklick-Menüs für Kunde/Scenario/Testfall
 
 ### Config-Wechsel Feature (neu)
 
@@ -104,6 +107,25 @@ TestCustomer (customerKey, customerName, jvmName, testPhase, activated)
 - **`LOAD_DIRECTORIES`** - Historie der letzten 10 Verzeichnisse (`;`-getrennt)
 - FileChooser öffnet automatisch im letzten verwendeten Verzeichnis
 - Verzeichnis wird bei erfolgreichem Laden/Speichern gespeichert
+
+### File-History und Kontextmenüs (CustomerTreeView)
+
+**File-History ComboBox:**
+- ComboBox in der Toolbar zeigt zuletzt geladene Dateien (max 15)
+- Auswahl lädt die Datei direkt
+- Config-Property: `CUSTOMER_FILE_HISTORY`
+
+**Verbesserte Selektion:**
+- Blauer Hintergrund (#3399FF) bei selektiertem Node
+- Weißer Text bei Selektion für bessere Lesbarkeit
+- Rahmen um selektierte Nodes
+
+**Kontextmenüs (Rechtsklick):**
+| Node-Typ | Menüpunkte |
+|----------|------------|
+| Kunde | Kunde bearbeiten, Kunde löschen, Neues Szenario erstellen |
+| Scenario | Szenario bearbeiten, Szenario löschen, Neuen Testfall erstellen |
+| Testfall | Testfall bearbeiten, Testfall löschen |
 
 ### Custom Icons (IconLoader)
 Neue Utility-Klasse `de.cavdar.util.IconLoader` lädt PNG-Icons aus `resources/icons/`:
@@ -323,11 +345,11 @@ private JMenuItemFixture clickMenu(String... path) {
 
 ## Git-Historie (letzte Commits)
 ```
+0d76e1d Add file history ComboBox, context menus, and improved selection for CustomerTreeView
 4896c31 Add directory persistence for CustomerTreeView load/save
 35a65f9 Add hierarchical CustomerTreeView with checkbox activation
 1c5651c Add SQL history/favorites and CSV/Excel export to DatabaseView
 c094a72 Add config selector with GUI reload and dynamic save path
-fdb11ba Update CLAUDE_CONTEXT.md with Docker prerequisites
 ```
 
 ## Docker-Konfiguration
@@ -421,6 +443,9 @@ target/StandardMDIGUI-1.0-SNAPSHOT-distribution.zip
 - [x] ~~**Export-Funktionalität**~~ - CSV und Excel Export (26.12.2025)
 - [x] ~~**CustomerTreeView überarbeitet**~~ - Hierarchisches Model mit Checkboxen (26.12.2025)
 - [x] ~~**Directory-Persistenz**~~ - Load/Save merkt sich letztes Verzeichnis (26.12.2025)
+- [x] ~~**File-History ComboBox**~~ - Zuletzt geladene Dateien (26.12.2025)
+- [x] ~~**Verbesserte Selektion**~~ - Blauer Hintergrund + weißer Text (26.12.2025)
+- [x] ~~**Kontextmenüs**~~ - Rechtsklick-Menüs für Kunde/Scenario/Testfall (26.12.2025)
 - [ ] Weitere Views nach Bedarf
 
 ## Prompt zum Fortsetzen
