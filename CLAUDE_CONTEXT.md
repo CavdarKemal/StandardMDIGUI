@@ -27,6 +27,8 @@
 1. **Config-Selector in Toolbar** - ComboBox zum Wechseln zwischen Config-Dateien
 2. **GUI-Reload bei Config-Wechsel** - Alle Einstellungen werden bei Config-Wechsel aktualisiert
 3. **Dynamischer Config-Speicherpfad** - Änderungen werden in die aktuell selektierte Config gespeichert
+4. **SQL-History/Favoriten** - ComboBox mit History (max 20) und Favoriten (★-Prefix)
+5. **Export-Funktionalität** - CSV und Excel (HTML-Tabelle) Export für Query-Ergebnisse
 
 ### Config-Wechsel Feature (neu)
 
@@ -59,6 +61,19 @@ Zwei Config-Dateien mit unterschiedlichen Werten zum Testen:
 | TEST-SOURCES | ITSQ;LOCAL;REMOTE | LOCAL;REMOTE |
 | TEST-TYPES | PHASE1;PHASE2;PHASE1_AND_PHASE2 | UNIT;INTEGRATION;E2E |
 | ITSQ_REVISIONS | EINE_PHASEN;ZWEI_PHASEN | v1.0;v2.0;v3.0;v4.0 |
+
+### SQL-History/Favoriten (DatabaseView)
+- **ComboBox** oberhalb des SQL-Textfelds
+- **Favoriten** (★-Prefix) werden oben angezeigt
+- **History** speichert die letzten 20 ausgeführten Queries
+- **★ Button** - Aktuelle Abfrage zu Favoriten hinzufügen
+- **✕ Button** - Ausgewählten Eintrag entfernen
+- Config-Properties: `SQL_HISTORY`, `SQL_FAVORITES`
+
+### Export-Funktionalität (DatabaseView)
+- **CSV Export** - Semikolon-getrennt, UTF-8 mit BOM (Excel-kompatibel)
+- **Excel Export** - HTML-Tabelle mit `.xls` Extension
+- Buttons in der Ergebnis-Leiste (nur aktiv bei vorhandenen Daten)
 
 ### Custom Icons (IconLoader)
 Neue Utility-Klasse `de.cavdar.util.IconLoader` lädt PNG-Icons aus `resources/icons/`:
@@ -371,8 +386,8 @@ target/StandardMDIGUI-1.0-SNAPSHOT-distribution.zip
 - [x] ~~**Config-Pfad als Parameter**~~ - Kommandozeile, System Property, Env (26.12.2025)
 - [x] ~~**Config-Wechsel mit GUI-Reload**~~ - Alle Einstellungen werden aktualisiert (26.12.2025)
 - [x] ~~**Dynamischer Config-Speicherpfad**~~ - Speichert in aktuell selektierte Config (26.12.2025)
-- [ ] DatabaseView: SQL-History/Favoriten
-- [ ] DatabaseView: Export-Funktionalität (CSV, Excel)
+- [x] ~~**SQL-History/Favoriten**~~ - ComboBox mit History und Favoriten (26.12.2025)
+- [x] ~~**Export-Funktionalität**~~ - CSV und Excel Export (26.12.2025)
 - [ ] TreeView-Struktur verbessern
 - [ ] Weitere Views nach Bedarf
 

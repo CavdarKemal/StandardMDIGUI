@@ -46,11 +46,18 @@ public class DatabaseViewPanel extends BaseViewPanel {
     protected JButton btnExecute;
     protected JButton btnClear;
 
+    // SQL History/Favorites components
+    protected JComboBox<String> cbSqlHistory;
+    protected JButton btnAddFavorite;
+    protected JButton btnRemoveFavorite;
+
     // Result panel components
     protected JPanel resultPanel;
     protected JTable tblResults;
     protected DefaultTableModel tableModel;
     protected JLabel lblRowCount;
+    protected JButton btnExportCsv;
+    protected JButton btnExportExcel;
 
     // Tree panel components (for database tables)
     protected JPanel tableTreePanel;
@@ -201,11 +208,39 @@ public class DatabaseViewPanel extends BaseViewPanel {
         queryPanel = new JPanel(new BorderLayout(5, 5));
         queryPanel.setBorder(BorderFactory.createTitledBorder("SQL-Abfrage"));
 
+        // History/Favorites panel at top
+        JPanel historyPanel = new JPanel(new BorderLayout(5, 0));
+        historyPanel.add(new JLabel("History/Favoriten: "), BorderLayout.WEST);
+
+        cbSqlHistory = new JComboBox<>();
+        cbSqlHistory.setName("SqlHistory");
+        cbSqlHistory.setEditable(false);
+        cbSqlHistory.setMaximumRowCount(15);
+        historyPanel.add(cbSqlHistory, BorderLayout.CENTER);
+
+        JPanel favoriteButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+        btnAddFavorite = new JButton("★");
+        btnAddFavorite.setName("AddFavorite");
+        btnAddFavorite.setToolTipText("Aktuelle Abfrage zu Favoriten hinzufügen");
+        btnAddFavorite.setMargin(new Insets(2, 6, 2, 6));
+        favoriteButtonPanel.add(btnAddFavorite);
+
+        btnRemoveFavorite = new JButton("✕");
+        btnRemoveFavorite.setName("RemoveFavorite");
+        btnRemoveFavorite.setToolTipText("Ausgewählten Eintrag aus History/Favoriten entfernen");
+        btnRemoveFavorite.setMargin(new Insets(2, 6, 2, 6));
+        favoriteButtonPanel.add(btnRemoveFavorite);
+
+        historyPanel.add(favoriteButtonPanel, BorderLayout.EAST);
+        queryPanel.add(historyPanel, BorderLayout.NORTH);
+
+        // Query text area
         txtQuery = new JTextArea(5, 60);
         txtQuery.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         txtQuery.setText("SELECT * FROM ");
         queryPanel.add(new JScrollPane(txtQuery), BorderLayout.CENTER);
 
+        // Buttons at bottom
         JPanel queryButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         btnExecute = new JButton("Ausführen", IconLoader.load("gear_run.png"));
         btnExecute.setName("Ausführen");
@@ -230,8 +265,27 @@ public class DatabaseViewPanel extends BaseViewPanel {
         JScrollPane scrollPane = new JScrollPane(tblResults);
         resultPanel.add(scrollPane, BorderLayout.CENTER);
 
+        // Bottom panel with row count and export buttons
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+
         lblRowCount = new JLabel("0 Zeilen");
-        resultPanel.add(lblRowCount, BorderLayout.SOUTH);
+        bottomPanel.add(lblRowCount, BorderLayout.WEST);
+
+        JPanel exportPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        btnExportCsv = new JButton("CSV Export");
+        btnExportCsv.setName("ExportCsv");
+        btnExportCsv.setToolTipText("Ergebnisse als CSV-Datei exportieren");
+        btnExportCsv.setEnabled(false);
+        exportPanel.add(btnExportCsv);
+
+        btnExportExcel = new JButton("Excel Export");
+        btnExportExcel.setName("ExportExcel");
+        btnExportExcel.setToolTipText("Ergebnisse als Excel-Datei exportieren");
+        btnExportExcel.setEnabled(false);
+        exportPanel.add(btnExportExcel);
+
+        bottomPanel.add(exportPanel, BorderLayout.EAST);
+        resultPanel.add(bottomPanel, BorderLayout.SOUTH);
     }
 
     // ===== Getters for View access =====
@@ -298,6 +352,30 @@ public class DatabaseViewPanel extends BaseViewPanel {
 
     public JLabel getRowCountLabel() {
         return lblRowCount;
+    }
+
+    // ===== History/Favorites Getters =====
+
+    public JComboBox<String> getSqlHistoryComboBox() {
+        return cbSqlHistory;
+    }
+
+    public JButton getAddFavoriteButton() {
+        return btnAddFavorite;
+    }
+
+    public JButton getRemoveFavoriteButton() {
+        return btnRemoveFavorite;
+    }
+
+    // ===== Export Getters =====
+
+    public JButton getExportCsvButton() {
+        return btnExportCsv;
+    }
+
+    public JButton getExportExcelButton() {
+        return btnExportExcel;
     }
 
     // ===== Tree Getters =====

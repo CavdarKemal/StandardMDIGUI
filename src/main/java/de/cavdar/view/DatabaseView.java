@@ -2,6 +2,7 @@ package de.cavdar.view;
 
 import de.cavdar.design.BaseViewPanel;
 import de.cavdar.design.DatabaseViewPanel;
+import de.cavdar.model.AppConfig;
 import de.cavdar.model.ConnectionInfo;
 import de.cavdar.util.ConnectionManager;
 import org.slf4j.Logger;
@@ -10,12 +11,17 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeWillExpandListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Vector;
 
@@ -35,10 +41,16 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
     private static final Logger LOG = LoggerFactory.getLogger(DatabaseView.class);
     private static final String NEW_CONNECTION = "<Neue Verbindung>";
     private static final String LOADING_NODE = "Laden...";
+    private static final String FAVORITE_PREFIX = "★ ";
+    private static final int MAX_HISTORY_SIZE = 20;
+    private static final String SQL_HISTORY_KEY = "SQL_HISTORY";
+    private static final String SQL_FAVORITES_KEY = "SQL_FAVORITES";
+    private static final String SQL_SEPARATOR = ";;";
 
     private DatabaseViewPanel dbPanel;
     private Connection connection;
     private String preselectedConnection;
+    private final AppConfig cfg = AppConfig.getInstance();
 
     /**
      * Constructs a new DatabaseView.
@@ -59,6 +71,9 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
 
         // Load saved connections after panel is created
         loadSavedConnections();
+
+        // Load SQL history/favorites
+        loadSqlHistory();
 
         // Preselect connection if specified
         if (connectionName != null && !connectionName.isEmpty()) {
@@ -95,6 +110,15 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
         // Query buttons
         dbPanel.getExecuteButton().addActionListener(e -> executeQuery());
         dbPanel.getClearButton().addActionListener(e -> clearQuery());
+
+        // SQL History/Favorites
+        dbPanel.getSqlHistoryComboBox().addActionListener(e -> onHistorySelected());
+        dbPanel.getAddFavoriteButton().addActionListener(e -> addToFavorites());
+        dbPanel.getRemoveFavoriteButton().addActionListener(e -> removeFromHistory());
+
+        // Export buttons
+        dbPanel.getExportCsvButton().addActionListener(e -> exportToCsv());
+        dbPanel.getExportExcelButton().addActionListener(e -> exportToExcel());
 
         // Table tree selection
         dbPanel.getTableTree().addTreeSelectionListener(e -> onTableSelected());
@@ -507,6 +531,11 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
                         SwingUtilities.invokeLater(() -> {
                             dbPanel.getTableModel().setDataVector(data, columnNames);
                             dbPanel.getRowCountLabel().setText(rowCount + " Zeilen (" + duration + " ms)");
+                            // Enable export buttons when data is available
+                            dbPanel.getExportCsvButton().setEnabled(rowCount > 0);
+                            dbPanel.getExportExcelButton().setEnabled(rowCount > 0);
+                            // Add to history on successful execution
+                            addToHistory(sql);
                             LOG.info("Query returned {} rows in {} ms", rowCount, duration);
                         });
                     }
@@ -518,6 +547,10 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
                         dbPanel.getTableModel().setRowCount(0);
                         dbPanel.getTableModel().setColumnCount(0);
                         dbPanel.getRowCountLabel().setText(updateCount + " Zeilen betroffen (" + duration + " ms)");
+                        dbPanel.getExportCsvButton().setEnabled(false);
+                        dbPanel.getExportExcelButton().setEnabled(false);
+                        // Add to history on successful execution
+                        addToHistory(sql);
                         JOptionPane.showMessageDialog(DatabaseView.this,
                                 updateCount + " Zeilen wurden aktualisiert.",
                                 "Ausführung erfolgreich",
@@ -533,6 +566,8 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
                             "Fehler",
                             JOptionPane.ERROR_MESSAGE);
                     dbPanel.getRowCountLabel().setText("Fehler: " + e.getMessage());
+                    dbPanel.getExportCsvButton().setEnabled(false);
+                    dbPanel.getExportExcelButton().setEnabled(false);
                 });
             }
         });
@@ -543,6 +578,317 @@ public class DatabaseView extends BaseView implements ConnectionManager.Connecti
         dbPanel.getTableModel().setRowCount(0);
         dbPanel.getTableModel().setColumnCount(0);
         dbPanel.getRowCountLabel().setText("0 Zeilen");
+        dbPanel.getExportCsvButton().setEnabled(false);
+        dbPanel.getExportExcelButton().setEnabled(false);
+    }
+
+    // ===== SQL History/Favorites Logic =====
+
+    private void loadSqlHistory() {
+        JComboBox<String> cb = dbPanel.getSqlHistoryComboBox();
+        cb.removeAllItems();
+        cb.addItem(""); // Empty item for no selection
+
+        // Load favorites first (with star prefix)
+        String favoritesData = cfg.getProperty(SQL_FAVORITES_KEY);
+        if (!favoritesData.isEmpty()) {
+            String[] favorites = favoritesData.split(SQL_SEPARATOR);
+            for (String sql : favorites) {
+                if (!sql.trim().isEmpty()) {
+                    cb.addItem(FAVORITE_PREFIX + sql.trim());
+                }
+            }
+        }
+
+        // Load history
+        String historyData = cfg.getProperty(SQL_HISTORY_KEY);
+        if (!historyData.isEmpty()) {
+            String[] history = historyData.split(SQL_SEPARATOR);
+            for (String sql : history) {
+                if (!sql.trim().isEmpty()) {
+                    cb.addItem(sql.trim());
+                }
+            }
+        }
+
+        LOG.debug("Loaded SQL history/favorites");
+    }
+
+    private void onHistorySelected() {
+        String selected = (String) dbPanel.getSqlHistoryComboBox().getSelectedItem();
+        if (selected != null && !selected.isEmpty()) {
+            // Remove favorite prefix if present
+            if (selected.startsWith(FAVORITE_PREFIX)) {
+                selected = selected.substring(FAVORITE_PREFIX.length());
+            }
+            dbPanel.getQueryArea().setText(selected);
+        }
+    }
+
+    private void addToFavorites() {
+        String sql = dbPanel.getQueryArea().getText().trim();
+        if (sql.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Bitte geben Sie zuerst eine SQL-Abfrage ein.",
+                    "Keine Abfrage", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Load existing favorites
+        String favoritesData = cfg.getProperty(SQL_FAVORITES_KEY);
+        LinkedHashSet<String> favorites = new LinkedHashSet<>();
+        if (!favoritesData.isEmpty()) {
+            for (String fav : favoritesData.split(SQL_SEPARATOR)) {
+                if (!fav.trim().isEmpty()) {
+                    favorites.add(fav.trim());
+                }
+            }
+        }
+
+        // Add new favorite
+        favorites.add(sql);
+
+        // Save favorites
+        String newFavorites = String.join(SQL_SEPARATOR, favorites);
+        cfg.setProperty(SQL_FAVORITES_KEY, newFavorites);
+        cfg.save();
+
+        // Reload history ComboBox
+        loadSqlHistory();
+
+        JOptionPane.showMessageDialog(this,
+                "Abfrage wurde zu Favoriten hinzugefügt.",
+                "Favorit gespeichert", JOptionPane.INFORMATION_MESSAGE);
+        LOG.info("Added SQL to favorites: {}", sql.substring(0, Math.min(50, sql.length())));
+    }
+
+    private void removeFromHistory() {
+        String selected = (String) dbPanel.getSqlHistoryComboBox().getSelectedItem();
+        if (selected == null || selected.isEmpty()) {
+            return;
+        }
+
+        boolean isFavorite = selected.startsWith(FAVORITE_PREFIX);
+        String sql = isFavorite ? selected.substring(FAVORITE_PREFIX.length()) : selected;
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Eintrag wirklich entfernen?\n" + sql.substring(0, Math.min(80, sql.length())) + "...",
+                "Entfernen bestätigen", JOptionPane.YES_NO_OPTION);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        if (isFavorite) {
+            // Remove from favorites
+            String favoritesData = cfg.getProperty(SQL_FAVORITES_KEY);
+            List<String> favorites = new ArrayList<>();
+            for (String fav : favoritesData.split(SQL_SEPARATOR)) {
+                if (!fav.trim().isEmpty() && !fav.trim().equals(sql)) {
+                    favorites.add(fav.trim());
+                }
+            }
+            cfg.setProperty(SQL_FAVORITES_KEY, String.join(SQL_SEPARATOR, favorites));
+        } else {
+            // Remove from history
+            String historyData = cfg.getProperty(SQL_HISTORY_KEY);
+            List<String> history = new ArrayList<>();
+            for (String h : historyData.split(SQL_SEPARATOR)) {
+                if (!h.trim().isEmpty() && !h.trim().equals(sql)) {
+                    history.add(h.trim());
+                }
+            }
+            cfg.setProperty(SQL_HISTORY_KEY, String.join(SQL_SEPARATOR, history));
+        }
+
+        cfg.save();
+        loadSqlHistory();
+        LOG.info("Removed SQL from {}: {}", isFavorite ? "favorites" : "history",
+                sql.substring(0, Math.min(50, sql.length())));
+    }
+
+    private void addToHistory(String sql) {
+        if (sql == null || sql.trim().isEmpty()) {
+            return;
+        }
+        sql = sql.trim();
+
+        // Load existing history
+        String historyData = cfg.getProperty(SQL_HISTORY_KEY);
+        LinkedHashSet<String> history = new LinkedHashSet<>();
+        history.add(sql); // Add new one first (most recent)
+
+        if (!historyData.isEmpty()) {
+            for (String h : historyData.split(SQL_SEPARATOR)) {
+                if (!h.trim().isEmpty() && !h.trim().equals(sql)) {
+                    history.add(h.trim());
+                }
+            }
+        }
+
+        // Limit history size
+        List<String> historyList = new ArrayList<>(history);
+        if (historyList.size() > MAX_HISTORY_SIZE) {
+            historyList = historyList.subList(0, MAX_HISTORY_SIZE);
+        }
+
+        // Save history
+        cfg.setProperty(SQL_HISTORY_KEY, String.join(SQL_SEPARATOR, historyList));
+        cfg.save();
+
+        // Reload history ComboBox
+        loadSqlHistory();
+    }
+
+    // ===== Export Logic =====
+
+    private void exportToCsv() {
+        DefaultTableModel model = dbPanel.getTableModel();
+        if (model.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Keine Daten zum Exportieren vorhanden.",
+                    "Keine Daten", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("CSV exportieren");
+        chooser.setFileFilter(new FileNameExtensionFilter("CSV-Dateien (*.csv)", "csv"));
+        chooser.setSelectedFile(new File("export.csv"));
+
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = chooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".csv")) {
+            file = new File(file.getAbsolutePath() + ".csv");
+        }
+
+        try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(
+                new FileOutputStream(file), StandardCharsets.UTF_8))) {
+
+            // Write BOM for Excel compatibility
+            writer.print('\ufeff');
+
+            // Write header
+            int columnCount = model.getColumnCount();
+            for (int i = 0; i < columnCount; i++) {
+                if (i > 0) writer.print(';');
+                writer.print(escapeCsv(model.getColumnName(i)));
+            }
+            writer.println();
+
+            // Write data
+            int rowCount = model.getRowCount();
+            for (int row = 0; row < rowCount; row++) {
+                for (int col = 0; col < columnCount; col++) {
+                    if (col > 0) writer.print(';');
+                    Object value = model.getValueAt(row, col);
+                    writer.print(escapeCsv(value != null ? value.toString() : ""));
+                }
+                writer.println();
+            }
+
+            JOptionPane.showMessageDialog(this,
+                    "Export erfolgreich: " + file.getAbsolutePath() + "\n" + rowCount + " Zeilen exportiert.",
+                    "Export abgeschlossen", JOptionPane.INFORMATION_MESSAGE);
+            LOG.info("Exported {} rows to CSV: {}", rowCount, file.getAbsolutePath());
+
+        } catch (IOException e) {
+            LOG.error("CSV export failed", e);
+            JOptionPane.showMessageDialog(this,
+                    "Fehler beim Export: " + e.getMessage(),
+                    "Export-Fehler", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void exportToExcel() {
+        DefaultTableModel model = dbPanel.getTableModel();
+        if (model.getRowCount() == 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Keine Daten zum Exportieren vorhanden.",
+                    "Keine Daten", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Excel exportieren");
+        chooser.setFileFilter(new FileNameExtensionFilter("Excel-Dateien (*.xls)", "xls"));
+        chooser.setSelectedFile(new File("export.xls"));
+
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        File file = chooser.getSelectedFile();
+        if (!file.getName().toLowerCase().endsWith(".xls")) {
+            file = new File(file.getAbsolutePath() + ".xls");
+        }
+
+        try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(
+                new FileOutputStream(file), StandardCharsets.UTF_8))) {
+
+            // Write HTML table format (Excel can open this)
+            writer.println("<html>");
+            writer.println("<head><meta charset=\"UTF-8\"></head>");
+            writer.println("<body>");
+            writer.println("<table border=\"1\">");
+
+            // Write header
+            writer.println("<tr>");
+            int columnCount = model.getColumnCount();
+            for (int i = 0; i < columnCount; i++) {
+                writer.print("<th>");
+                writer.print(escapeHtml(model.getColumnName(i)));
+                writer.println("</th>");
+            }
+            writer.println("</tr>");
+
+            // Write data
+            int rowCount = model.getRowCount();
+            for (int row = 0; row < rowCount; row++) {
+                writer.println("<tr>");
+                for (int col = 0; col < columnCount; col++) {
+                    writer.print("<td>");
+                    Object value = model.getValueAt(row, col);
+                    writer.print(escapeHtml(value != null ? value.toString() : ""));
+                    writer.println("</td>");
+                }
+                writer.println("</tr>");
+            }
+
+            writer.println("</table>");
+            writer.println("</body>");
+            writer.println("</html>");
+
+            JOptionPane.showMessageDialog(this,
+                    "Export erfolgreich: " + file.getAbsolutePath() + "\n" + rowCount + " Zeilen exportiert.",
+                    "Export abgeschlossen", JOptionPane.INFORMATION_MESSAGE);
+            LOG.info("Exported {} rows to Excel (HTML): {}", rowCount, file.getAbsolutePath());
+
+        } catch (IOException e) {
+            LOG.error("Excel export failed", e);
+            JOptionPane.showMessageDialog(this,
+                    "Fehler beim Export: " + e.getMessage(),
+                    "Export-Fehler", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        if (value.contains(";") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
+    }
+
+    private String escapeHtml(String value) {
+        if (value == null) return "";
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     // ===== Getters =====

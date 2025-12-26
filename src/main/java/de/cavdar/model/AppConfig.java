@@ -101,7 +101,9 @@ public class AppConfig {
         ));
 
         PROPERTY_GROUPS.put("DATABASE - Database connections", List.of(
-                "DB_CONNECTIONS"
+                "DB_CONNECTIONS",
+                "SQL_HISTORY",
+                "SQL_FAVORITES"
         ));
 
         PROPERTY_GROUPS.put("TESTS - Test configuration", List.of(
