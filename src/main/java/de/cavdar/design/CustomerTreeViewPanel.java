@@ -19,12 +19,10 @@ import java.awt.*;
  */
 public class CustomerTreeViewPanel extends TreeViewPanel {
 
-    // Toolbar containers
+    // Toolbar container with GridBagLayout
     protected JPanel toolbarContainer;
-    protected JToolBar toolbar1;  // Row 1: File history, Load, Save
-    protected JToolBar toolbar2;  // Row 2: Filter, Active only, Refresh
 
-    // Row 1 components
+    // Toolbar components - Row 1
     protected JComboBox<String> cbFileHistory;
     protected JButton btnLoad;
     protected JButton btnSave;
@@ -39,16 +37,23 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
     protected JLabel lblSearch;
     protected JTextField txtSearch;
     protected JButton btnSearch;
-    protected JButton btnEdit;
-    protected JButton btnDelete;
 
-    // Tab components
+    // Tab components - Details
     protected JTextArea detailsArea;
     protected JScrollPane detailsScrollPane;
 
-    protected JTable dataTable;
-    protected JScrollPane dataScrollPane;
+    // Tab components - Testfall Editor
+    protected JPanel testfallEditorPanel;
+    protected JTextField txtTestfallName;
+    protected JTextField txtTestfallInfo;
+    protected JTextField txtItsqNr;
+    protected JTextField txtPseudoNr;
+    protected JCheckBox chkTestfallActivated;
+    protected JCheckBox chkExported;
+    protected JCheckBox chkShouldBeExported;
+    protected JButton btnSaveTestfall;
 
+    // Tab components - Notes and History
     protected JTextArea notesArea;
     protected JScrollPane notesScrollPane;
 
@@ -56,7 +61,7 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
     protected JScrollPane historyScrollPane;
 
     public CustomerTreeViewPanel() {
-        super("Kunden");
+        super("Kunden"); // Root node name
     }
 
     @Override
@@ -76,64 +81,52 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
     }
 
     private void setupLeftToolbarComponents() {
-        // Create container for two toolbar rows
-        toolbarContainer = new JPanel();
-        toolbarContainer.setLayout(new BoxLayout(toolbarContainer, BoxLayout.Y_AXIS));
+        // Create container with GridBagLayout for toolbar controls
+        toolbarContainer = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(2, 2, 2, 2);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // === Row 1: File history, Load, Save ===
-        toolbar1 = new JToolBar();
-        toolbar1.setFloatable(false);
-
-        // File history ComboBox - shows only filename
+        // === Row 0: File history ComboBox ===
+        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridwidth = 3;
         cbFileHistory = new JComboBox<>();
         cbFileHistory.setToolTipText("Zuletzt geladene Dateien");
-        Dimension cbSize = new Dimension(180, 25);
-        cbFileHistory.setPreferredSize(cbSize);
-        cbFileHistory.setMinimumSize(cbSize);
-        cbFileHistory.setMaximumSize(cbSize);
-        toolbar1.add(cbFileHistory);
+        toolbarContainer.add(cbFileHistory, gbc);
 
-        toolbar1.addSeparator(new Dimension(5, 0));
+        // === Row 1: Load, Save buttons ===
+        gbc.gridwidth = 1;
+        gbc.gridy = 1;
 
-        // Load/Save buttons
+        gbc.gridx = 0;
         btnLoad = new JButton("Laden", IconLoader.load("folder_view.png"));
         btnLoad.setToolTipText("Testdaten aus JSON-Datei laden");
-        toolbar1.add(btnLoad);
+        toolbarContainer.add(btnLoad, gbc);
 
+        gbc.gridx = 1;
         btnSave = new JButton("Speichern", IconLoader.load("save.png"));
         btnSave.setToolTipText("Testdaten in JSON-Datei speichern");
-        toolbar1.add(btnSave);
+        toolbarContainer.add(btnSave, gbc);
 
-        toolbarContainer.add(toolbar1);
+        gbc.gridx = 2;
+        btnRefresh = new JButton("", IconLoader.load("refresh.png"));
+        btnRefresh.setToolTipText("Aktualisieren");
+        toolbarContainer.add(btnRefresh, gbc);
 
-        // === Row 2: Filter, Active only, Refresh ===
-        toolbar2 = new JToolBar();
-        toolbar2.setFloatable(false);
+        // === Row 2: Filter controls ===
+        gbc.gridy = 2;
 
-        // Filter label and combo - fixed size
+        gbc.gridx = 0;
         lblFilter = new JLabel("Filter:");
-        toolbar2.add(lblFilter);
+        toolbarContainer.add(lblFilter, gbc);
 
+        gbc.gridx = 1;
         cbFilter = new JComboBox<>(new String[]{"Alle", "Aktiv", "Inaktiv"});
-        Dimension filterSize = new Dimension(80, 25);
-        cbFilter.setPreferredSize(filterSize);
-        cbFilter.setMinimumSize(filterSize);
-        cbFilter.setMaximumSize(filterSize);
-        toolbar2.add(cbFilter);
+        toolbarContainer.add(cbFilter, gbc);
 
-        toolbar2.addSeparator(new Dimension(10, 0));
-
-        // Active only checkbox
+        gbc.gridx = 2;
         chkActiveOnly = new JCheckBox("Nur aktive");
-        toolbar2.add(chkActiveOnly);
-
-        toolbar2.addSeparator(new Dimension(10, 0));
-
-        // Refresh button
-        btnRefresh = new JButton("Aktualisieren", IconLoader.load("refresh.png"));
-        toolbar2.add(btnRefresh);
-
-        toolbarContainer.add(toolbar2);
+        toolbarContainer.add(chkActiveOnly, gbc);
 
         // Replace the single leftToolbar with our container
         leftPanel.remove(leftToolbar);
@@ -151,15 +144,7 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
 
         btnSearch = new JButton("Suchen", IconLoader.load("folder_view.png"));
         rightToolbar.add(btnSearch);
-
-        rightToolbar.addSeparator();
-
-        // Action buttons
-        btnEdit = new JButton("Bearbeiten", IconLoader.load("folder_edit.png"));
-        rightToolbar.add(btnEdit);
-
-        btnDelete = new JButton("Löschen", IconLoader.load("folder_delete.png"));
-        rightToolbar.add(btnDelete);
+        // Note: Edit/Delete buttons removed - functionality available via context menu
     }
 
     private void setupTabComponents() {
@@ -170,25 +155,123 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
         detailsScrollPane = new JScrollPane(detailsArea);
         tabbedPane.addTab("Details", detailsScrollPane);
 
-        // Data tab with table
-        String[] columns = {"Eigenschaft", "Wert"};
-        dataTable = new JTable(new Object[][]{}, columns);
-        dataScrollPane = new JScrollPane(dataTable);
-        tabbedPane.addTab("Daten", dataScrollPane);
+        // Testfall Editor tab
+        testfallEditorPanel = createTestfallEditorPanel();
+        tabbedPane.addTab("Testfall Editor", testfallEditorPanel);
 
         // Notes tab
         notesArea = new JTextArea();
-        notesArea.setText("Notizen zum ausgewählten Kunden...");
+        notesArea.setText("Notizen zum ausgewählten Element...");
         notesScrollPane = new JScrollPane(notesArea);
         tabbedPane.addTab("Notizen", notesScrollPane);
 
         // History tab
         historyList = new JList<>(new String[]{
-            "2024-12-25: Erstellt",
-            "2024-12-24: Aktualisiert"
+            "2024-12-26: Erstellt"
         });
         historyScrollPane = new JScrollPane(historyList);
         tabbedPane.addTab("Historie", historyScrollPane);
+    }
+
+    /**
+     * Creates the Testfall editor panel with editable fields.
+     */
+    private JPanel createTestfallEditorPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.WEST;
+
+        int row = 0;
+
+        // Testfall Name
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.fill = GridBagConstraints.NONE;
+        panel.add(new JLabel("Testfall Name:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        txtTestfallName = new JTextField(20);
+        panel.add(txtTestfallName, gbc);
+
+        // Testfall Info
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        panel.add(new JLabel("Testfall Info:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        txtTestfallInfo = new JTextField(20);
+        panel.add(txtTestfallInfo, gbc);
+
+        // ITSQ Nr
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        panel.add(new JLabel("ITSQ Nr:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        txtItsqNr = new JTextField(15);
+        panel.add(txtItsqNr, gbc);
+
+        // Pseudo Nr
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 0;
+        panel.add(new JLabel("Pseudo Nr:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        txtPseudoNr = new JTextField(15);
+        panel.add(txtPseudoNr, gbc);
+
+        // Checkboxes
+        row++;
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.NONE;
+        chkTestfallActivated = new JCheckBox("Aktiviert");
+        panel.add(chkTestfallActivated, gbc);
+
+        row++;
+        gbc.gridy = row;
+        chkExported = new JCheckBox("Exportiert");
+        panel.add(chkExported, gbc);
+
+        row++;
+        gbc.gridy = row;
+        chkShouldBeExported = new JCheckBox("Soll exportiert werden");
+        panel.add(chkShouldBeExported, gbc);
+
+        // Save button
+        row++;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.insets = new Insets(15, 5, 5, 5);
+        btnSaveTestfall = new JButton("Speichern", IconLoader.load("save.png"));
+        btnSaveTestfall.setEnabled(false); // Disabled until a testfall is selected
+        panel.add(btnSaveTestfall, gbc);
+
+        // Spacer to push everything to the top
+        row++;
+        gbc.gridy = row;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(new JPanel(), gbc);
+
+        return panel;
     }
 
     // ===== Getters for View access =====
@@ -225,20 +308,8 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
         return btnSearch;
     }
 
-    public JButton getEditButton() {
-        return btnEdit;
-    }
-
-    public JButton getDeleteButton() {
-        return btnDelete;
-    }
-
     public JTextArea getDetailsArea() {
         return detailsArea;
-    }
-
-    public JTable getDataTable() {
-        return dataTable;
     }
 
     public JTextArea getNotesArea() {
@@ -247,5 +318,47 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
 
     public JList<String> getHistoryList() {
         return historyList;
+    }
+
+    // ===== Testfall Editor Getters =====
+
+    public JPanel getTestfallEditorPanel() {
+        return testfallEditorPanel;
+    }
+
+    public JTextField getTestfallNameField() {
+        return txtTestfallName;
+    }
+
+    public JTextField getTestfallInfoField() {
+        return txtTestfallInfo;
+    }
+
+    public JTextField getItsqNrField() {
+        return txtItsqNr;
+    }
+
+    public JTextField getPseudoNrField() {
+        return txtPseudoNr;
+    }
+
+    public JCheckBox getTestfallActivatedCheckBox() {
+        return chkTestfallActivated;
+    }
+
+    public JCheckBox getExportedCheckBox() {
+        return chkExported;
+    }
+
+    public JCheckBox getShouldBeExportedCheckBox() {
+        return chkShouldBeExported;
+    }
+
+    public JButton getSaveTestfallButton() {
+        return btnSaveTestfall;
+    }
+
+    public JTabbedPane getTabbedPane() {
+        return tabbedPane;
     }
 }

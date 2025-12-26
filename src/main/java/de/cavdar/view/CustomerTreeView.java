@@ -56,6 +56,10 @@ public class CustomerTreeView extends TreeView {
     // Map filename display to full path
     private final java.util.Map<String, String> fileHistoryMap = new java.util.LinkedHashMap<>();
 
+    // Currently edited testfall (for editor panel)
+    private TestCrefo currentEditingTestfall;
+    private DefaultMutableTreeNode currentEditingNode;
+
     // Context menus
     private JPopupMenu customerContextMenu;
     private JPopupMenu scenarioContextMenu;
@@ -132,7 +136,7 @@ public class CustomerTreeView extends TreeView {
         // TestCrefo context menu
         testCrefoContextMenu = new JPopupMenu();
         JMenuItem editTestfallItem = new JMenuItem("Testfall bearbeiten", IconLoader.load("folder_edit.png"));
-        editTestfallItem.addActionListener(e -> editSelected());
+        editTestfallItem.addActionListener(e -> openTestfallEditor());
         JMenuItem deleteTestfallItem = new JMenuItem("Testfall löschen", IconLoader.load("folder_delete.png"));
         deleteTestfallItem.addActionListener(e -> deleteSelected());
         testCrefoContextMenu.add(editTestfallItem);
@@ -376,6 +380,123 @@ public class CustomerTreeView extends TreeView {
         LOG.info("Created new testfall: {} for scenario: {}", name, scenario.getScenarioName());
     }
 
+    // ===== Testfall Editor =====
+
+    /**
+     * Opens the Testfall editor panel with the selected testfall's data.
+     */
+    private void openTestfallEditor() {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode)
+                customerPanel.getTree().getLastSelectedPathComponent();
+
+        if (node == null) return;
+
+        Object userObject = node.getUserObject();
+        if (!(userObject instanceof TestCrefo crefo)) return;
+
+        // Store reference to currently editing testfall
+        currentEditingTestfall = crefo;
+        currentEditingNode = node;
+
+        // Populate editor fields
+        customerPanel.getTestfallNameField().setText(crefo.getTestFallName() != null ? crefo.getTestFallName() : "");
+        customerPanel.getTestfallInfoField().setText(crefo.getTestFallInfo() != null ? crefo.getTestFallInfo() : "");
+        customerPanel.getItsqNrField().setText(crefo.getItsqTestCrefoNr() != null ? crefo.getItsqTestCrefoNr().toString() : "");
+        customerPanel.getPseudoNrField().setText(crefo.getPseudoCrefoNr() != null ? crefo.getPseudoCrefoNr().toString() : "");
+        customerPanel.getTestfallActivatedCheckBox().setSelected(crefo.isActivated());
+        customerPanel.getExportedCheckBox().setSelected(crefo.isExported());
+        customerPanel.getShouldBeExportedCheckBox().setSelected(crefo.isShouldBeExported());
+
+        // Enable save button
+        customerPanel.getSaveTestfallButton().setEnabled(true);
+
+        // Switch to editor tab (index 1)
+        customerPanel.getTabbedPane().setSelectedIndex(1);
+
+        LOG.info("Opened editor for testfall: {}", crefo.getTestFallName());
+    }
+
+    /**
+     * Saves the testfall data from the editor panel.
+     */
+    private void saveTestfallFromEditor() {
+        if (currentEditingTestfall == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Kein Testfall zum Speichern ausgewählt.",
+                    "Fehler", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Update testfall from editor fields
+        currentEditingTestfall.setTestFallName(customerPanel.getTestfallNameField().getText().trim());
+        currentEditingTestfall.setTestFallInfo(customerPanel.getTestfallInfoField().getText().trim());
+
+        // Parse ITSQ Nr
+        String itsqStr = customerPanel.getItsqNrField().getText().trim();
+        if (!itsqStr.isEmpty()) {
+            try {
+                currentEditingTestfall.setItsqTestCrefoNr(Long.parseLong(itsqStr));
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                        "ITSQ Nr muss eine Zahl sein.",
+                        "Eingabefehler", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } else {
+            currentEditingTestfall.setItsqTestCrefoNr(null);
+        }
+
+        // Parse Pseudo Nr
+        String pseudoStr = customerPanel.getPseudoNrField().getText().trim();
+        if (!pseudoStr.isEmpty()) {
+            try {
+                currentEditingTestfall.setPseudoCrefoNr(Long.parseLong(pseudoStr));
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                        "Pseudo Nr muss eine Zahl sein.",
+                        "Eingabefehler", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } else {
+            currentEditingTestfall.setPseudoCrefoNr(null);
+        }
+
+        currentEditingTestfall.setActivated(customerPanel.getTestfallActivatedCheckBox().isSelected());
+        currentEditingTestfall.setExported(customerPanel.getExportedCheckBox().isSelected());
+        currentEditingTestfall.setShouldBeExported(customerPanel.getShouldBeExportedCheckBox().isSelected());
+
+        // Update tree display
+        if (currentEditingNode != null) {
+            customerPanel.getTreeModel().nodeChanged(currentEditingNode);
+        }
+        customerPanel.getTree().repaint();
+
+        // Update details view
+        updateDetails();
+
+        LOG.info("Saved testfall: {}", currentEditingTestfall.getTestFallName());
+        JOptionPane.showMessageDialog(this,
+                "Testfall gespeichert.",
+                "Gespeichert", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    /**
+     * Clears the testfall editor fields.
+     */
+    private void clearTestfallEditor() {
+        currentEditingTestfall = null;
+        currentEditingNode = null;
+
+        customerPanel.getTestfallNameField().setText("");
+        customerPanel.getTestfallInfoField().setText("");
+        customerPanel.getItsqNrField().setText("");
+        customerPanel.getPseudoNrField().setText("");
+        customerPanel.getTestfallActivatedCheckBox().setSelected(false);
+        customerPanel.getExportedCheckBox().setSelected(false);
+        customerPanel.getShouldBeExportedCheckBox().setSelected(false);
+        customerPanel.getSaveTestfallButton().setEnabled(false);
+    }
+
     /**
      * Sets up all event listeners.
      */
@@ -396,9 +517,8 @@ public class CustomerTreeView extends TreeView {
         customerPanel.getSearchButton().addActionListener(e -> performSearch());
         customerPanel.getSearchField().addActionListener(e -> performSearch());
 
-        // Edit/Delete
-        customerPanel.getEditButton().addActionListener(e -> editSelected());
-        customerPanel.getDeleteButton().addActionListener(e -> deleteSelected());
+        // Testfall Editor save button
+        customerPanel.getSaveTestfallButton().addActionListener(e -> saveTestfallFromEditor());
     }
 
     // ===== Data Loading =====
