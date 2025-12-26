@@ -20,6 +20,8 @@ import java.awt.*;
 public class CustomerTreeViewPanel extends TreeViewPanel {
 
     // Left toolbar components
+    protected JButton btnLoad;
+    protected JButton btnSave;
     protected JLabel lblFilter;
     protected JComboBox<String> cbFilter;
     protected JCheckBox chkActiveOnly;
@@ -66,6 +68,17 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
     }
 
     private void setupLeftToolbarComponents() {
+        // Load/Save buttons
+        btnLoad = new JButton("Laden", IconLoader.load("folder_view.png"));
+        btnLoad.setToolTipText("Testdaten aus JSON-Datei laden");
+        leftToolbar.add(btnLoad);
+
+        btnSave = new JButton("Speichern", IconLoader.load("save.png"));
+        btnSave.setToolTipText("Testdaten in JSON-Datei speichern");
+        leftToolbar.add(btnSave);
+
+        leftToolbar.addSeparator();
+
         // Filter label and combo
         lblFilter = new JLabel("Filter:");
         leftToolbar.add(lblFilter);
@@ -138,6 +151,14 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
     }
 
     // ===== Getters for View access =====
+
+    public JButton getLoadButton() {
+        return btnLoad;
+    }
+
+    public JButton getSaveButton() {
+        return btnSave;
+    }
 
     public JComboBox<String> getFilterComboBox() {
         return cbFilter;

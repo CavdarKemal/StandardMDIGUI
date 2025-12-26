@@ -29,6 +29,7 @@
 3. **Dynamischer Config-Speicherpfad** - Änderungen werden in die aktuell selektierte Config gespeichert
 4. **SQL-History/Favoriten** - ComboBox mit History (max 20) und Favoriten (★-Prefix)
 5. **Export-Funktionalität** - CSV und Excel (HTML-Tabelle) Export für Query-Ergebnisse
+6. **CustomerTreeView komplett überarbeitet** - Hierarchisches Model mit Checkboxen
 
 ### Config-Wechsel Feature (neu)
 
@@ -74,6 +75,28 @@ Zwei Config-Dateien mit unterschiedlichen Werten zum Testen:
 - **CSV Export** - Semikolon-getrennt, UTF-8 mit BOM (Excel-kompatibel)
 - **Excel Export** - HTML-Tabelle mit `.xls` Extension
 - Buttons in der Ergebnis-Leiste (nur aktiv bei vorhandenen Daten)
+
+### CustomerTreeView mit hierarchischem Model
+Neue Model-Klassen für Test-Hierarchie:
+```
+TestCustomer (customerKey, customerName, jvmName, testPhase, activated)
+└── TestScenario (scenarioName, activated)
+    └── TestCrefo (testFallName, testFallInfo, itsqTestCrefoNr, activated, exported)
+```
+
+**Features:**
+- **Checkboxen** im Tree für activated-Status (Klick zum Umschalten)
+- **Farbcodierung** - Grün = aktiv, Grau = inaktiv
+- **Icons** - Unterschiedliche Icons pro Ebene
+- **Filter** - Alle / Aktiv / Inaktiv + "Nur aktive" Checkbox
+- **Laden/Speichern** - JSON-Dateien
+- **Beispieldaten** - Werden beim Start geladen
+
+**Neue Klassen:**
+- `model/TestCustomer.java`, `model/TestScenario.java`, `model/TestCrefo.java`
+- `util/TestDataLoader.java` - JSON Laden/Speichern
+- `util/CheckboxTreeCellRenderer.java` - Checkbox-Anzeige
+- `util/CheckboxTreeCellEditor.java` - Checkbox-Klick-Handling
 
 ### Custom Icons (IconLoader)
 Neue Utility-Klasse `de.cavdar.util.IconLoader` lädt PNG-Icons aus `resources/icons/`:
@@ -388,7 +411,7 @@ target/StandardMDIGUI-1.0-SNAPSHOT-distribution.zip
 - [x] ~~**Dynamischer Config-Speicherpfad**~~ - Speichert in aktuell selektierte Config (26.12.2025)
 - [x] ~~**SQL-History/Favoriten**~~ - ComboBox mit History und Favoriten (26.12.2025)
 - [x] ~~**Export-Funktionalität**~~ - CSV und Excel Export (26.12.2025)
-- [ ] TreeView-Struktur verbessern
+- [x] ~~**CustomerTreeView überarbeitet**~~ - Hierarchisches Model mit Checkboxen (26.12.2025)
 - [ ] Weitere Views nach Bedarf
 
 ## Prompt zum Fortsetzen
