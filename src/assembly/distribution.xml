@@ -13,17 +13,26 @@
     <includeBaseDirectory>true</includeBaseDirectory>
     <baseDirectory>${project.artifactId}-${project.version}</baseDirectory>
 
-    <!-- Include the main JAR with dependencies -->
+    <!-- Dependencies in lib folder (without main JAR) -->
     <dependencySets>
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
-            <useProjectArtifact>true</useProjectArtifact>
+            <useProjectArtifact>false</useProjectArtifact>
             <scope>runtime</scope>
         </dependencySet>
     </dependencySets>
 
     <!-- Include files from deployment directory -->
     <fileSets>
+        <!-- Main JAR in root -->
+        <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory>/</outputDirectory>
+            <includes>
+                <include>${project.build.finalName}.jar</include>
+            </includes>
+        </fileSet>
+
         <!-- Deployment files (scripts, configs, etc.) -->
         <fileSet>
             <directory>${project.basedir}/deployment</directory>
