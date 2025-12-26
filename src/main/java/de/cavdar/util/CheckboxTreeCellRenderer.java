@@ -5,6 +5,7 @@ import de.cavdar.model.TestCustomer;
 import de.cavdar.model.TestScenario;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeCellRenderer;
@@ -26,9 +27,18 @@ public class CheckboxTreeCellRenderer extends JPanel implements TreeCellRenderer
     private static final Color INACTIVE_COLOR = Color.GRAY;
     private static final Color ACTIVE_COLOR = new Color(0, 100, 0); // Dark green
 
+    // Selection colors - more prominent
+    private static final Color SELECTION_BACKGROUND = new Color(51, 153, 255); // Bright blue
+    private static final Color SELECTION_FOREGROUND = Color.WHITE;
+    private static final Border SELECTION_BORDER = BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(0, 102, 204), 1),
+            BorderFactory.createEmptyBorder(1, 2, 1, 2)
+    );
+    private static final Border NO_SELECTION_BORDER = BorderFactory.createEmptyBorder(2, 3, 2, 3);
+
     public CheckboxTreeCellRenderer() {
         setLayout(new FlowLayout(FlowLayout.LEFT, 2, 0));
-        setOpaque(false);
+        setOpaque(true);
 
         checkBox = new JCheckBox();
         checkBox.setOpaque(false);
@@ -79,17 +89,20 @@ public class CheckboxTreeCellRenderer extends JPanel implements TreeCellRenderer
         label.setText(text);
         label.setIcon(icon);
 
-        if (activated) {
-            label.setForeground(ACTIVE_COLOR);
-        } else {
-            label.setForeground(INACTIVE_COLOR);
-        }
-
         if (selected) {
-            setBackground(new Color(184, 207, 229));
-            setOpaque(true);
+            // Selected: white text on blue background
+            setBackground(SELECTION_BACKGROUND);
+            setBorder(SELECTION_BORDER);
+            label.setForeground(SELECTION_FOREGROUND);
         } else {
-            setOpaque(false);
+            // Not selected: green/gray text on transparent background
+            setBackground(tree.getBackground());
+            setBorder(NO_SELECTION_BORDER);
+            if (activated) {
+                label.setForeground(ACTIVE_COLOR);
+            } else {
+                label.setForeground(INACTIVE_COLOR);
+            }
         }
 
         return this;

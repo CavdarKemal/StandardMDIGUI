@@ -75,6 +75,7 @@ public class AppConfig {
                 "LAST_LOAD_PATH",
                 "LAST_LOAD_DIRECTORY",
                 "LOAD_DIRECTORIES",
+                "CUSTOMER_FILE_HISTORY",
                 "LAST_LOOK_AND_FEEL_CLASS",
                 "LAST_TEST_SOURCE",
                 "LAST_TEST_TYPE"

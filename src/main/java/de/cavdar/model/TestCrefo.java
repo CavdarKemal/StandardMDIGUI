@@ -19,6 +19,10 @@ public class TestCrefo {
     public TestCrefo() {
     }
 
+    public TestCrefo(String testFallName) {
+        this.testFallName = testFallName;
+    }
+
     public TestCrefo(String testFallName, String testFallInfo) {
         this.testFallName = testFallName;
         this.testFallInfo = testFallInfo;

@@ -20,6 +20,7 @@ import java.awt.*;
 public class CustomerTreeViewPanel extends TreeViewPanel {
 
     // Left toolbar components
+    protected JComboBox<String> cbFileHistory;
     protected JButton btnLoad;
     protected JButton btnSave;
     protected JLabel lblFilter;
@@ -68,6 +69,15 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
     }
 
     private void setupLeftToolbarComponents() {
+        // File history ComboBox
+        cbFileHistory = new JComboBox<>();
+        cbFileHistory.setToolTipText("Zuletzt geladene Dateien");
+        cbFileHistory.setPreferredSize(new Dimension(200, 25));
+        cbFileHistory.setMaximumSize(new Dimension(250, 25));
+        leftToolbar.add(cbFileHistory);
+
+        leftToolbar.addSeparator();
+
         // Load/Save buttons
         btnLoad = new JButton("Laden", IconLoader.load("folder_view.png"));
         btnLoad.setToolTipText("Testdaten aus JSON-Datei laden");
@@ -151,6 +161,10 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
     }
 
     // ===== Getters for View access =====
+
+    public JComboBox<String> getFileHistoryComboBox() {
+        return cbFileHistory;
+    }
 
     public JButton getLoadButton() {
         return btnLoad;

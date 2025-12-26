@@ -17,8 +17,12 @@ import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
+import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,17 +42,28 @@ public class CustomerTreeView extends TreeView {
     private static final Logger LOG = LoggerFactory.getLogger(CustomerTreeView.class);
     private static final String LAST_LOAD_DIRECTORY_KEY = "LAST_LOAD_DIRECTORY";
     private static final String LOAD_DIRECTORIES_KEY = "LOAD_DIRECTORIES";
+    private static final String FILE_HISTORY_KEY = "CUSTOMER_FILE_HISTORY";
     private static final String DIRECTORY_SEPARATOR = ";";
     private static final int MAX_DIRECTORY_HISTORY = 10;
+    private static final int MAX_FILE_HISTORY = 15;
 
     private final AppConfig cfg = AppConfig.getInstance();
     private CustomerTreeViewPanel customerPanel;
     private List<TestCustomer> customers = new ArrayList<>();
     private File currentFile;
+    private boolean isLoadingFromHistory = false;
+
+    // Context menus
+    private JPopupMenu customerContextMenu;
+    private JPopupMenu scenarioContextMenu;
+    private JPopupMenu testCrefoContextMenu;
 
     public CustomerTreeView() {
         super("Kunden Explorer");
         setupCheckboxTree();
+        setupContextMenus();
+        setupTreeMouseListener();
+        loadFileHistory();
         loadSampleData();
         LOG.debug("CustomerTreeView initialized");
     }
@@ -79,6 +94,253 @@ public class CustomerTreeView extends TreeView {
         });
         tree.setCellEditor(editor);
         tree.setEditable(true);
+    }
+
+    /**
+     * Sets up context menus for different node types.
+     */
+    private void setupContextMenus() {
+        // Customer context menu
+        customerContextMenu = new JPopupMenu();
+        JMenuItem editCustomerItem = new JMenuItem("Kunde bearbeiten", IconLoader.load("folder_edit.png"));
+        editCustomerItem.addActionListener(e -> editSelected());
+        JMenuItem deleteCustomerItem = new JMenuItem("Kunde löschen", IconLoader.load("folder_delete.png"));
+        deleteCustomerItem.addActionListener(e -> deleteSelected());
+        JMenuItem newScenarioItem = new JMenuItem("Neues Szenario erstellen", IconLoader.load("folder_view.png"));
+        newScenarioItem.addActionListener(e -> createNewScenario());
+        customerContextMenu.add(editCustomerItem);
+        customerContextMenu.add(deleteCustomerItem);
+        customerContextMenu.addSeparator();
+        customerContextMenu.add(newScenarioItem);
+
+        // Scenario context menu
+        scenarioContextMenu = new JPopupMenu();
+        JMenuItem editScenarioItem = new JMenuItem("Szenario bearbeiten", IconLoader.load("folder_edit.png"));
+        editScenarioItem.addActionListener(e -> editSelected());
+        JMenuItem deleteScenarioItem = new JMenuItem("Szenario löschen", IconLoader.load("folder_delete.png"));
+        deleteScenarioItem.addActionListener(e -> deleteSelected());
+        JMenuItem newTestfallItem = new JMenuItem("Neuen Testfall erstellen", IconLoader.load("table_sql.png"));
+        newTestfallItem.addActionListener(e -> createNewTestfall());
+        scenarioContextMenu.add(editScenarioItem);
+        scenarioContextMenu.add(deleteScenarioItem);
+        scenarioContextMenu.addSeparator();
+        scenarioContextMenu.add(newTestfallItem);
+
+        // TestCrefo context menu
+        testCrefoContextMenu = new JPopupMenu();
+        JMenuItem editTestfallItem = new JMenuItem("Testfall bearbeiten", IconLoader.load("folder_edit.png"));
+        editTestfallItem.addActionListener(e -> editSelected());
+        JMenuItem deleteTestfallItem = new JMenuItem("Testfall löschen", IconLoader.load("folder_delete.png"));
+        deleteTestfallItem.addActionListener(e -> deleteSelected());
+        testCrefoContextMenu.add(editTestfallItem);
+        testCrefoContextMenu.add(deleteTestfallItem);
+    }
+
+    /**
+     * Sets up mouse listener for context menu on tree.
+     */
+    private void setupTreeMouseListener() {
+        customerPanel.getTree().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                handleTreeMouseEvent(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                handleTreeMouseEvent(e);
+            }
+        });
+    }
+
+    private void handleTreeMouseEvent(MouseEvent e) {
+        if (e.isPopupTrigger()) {
+            JTree tree = customerPanel.getTree();
+            TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+
+            if (path != null) {
+                tree.setSelectionPath(path);
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+                Object userObject = node.getUserObject();
+
+                if (userObject instanceof TestCustomer) {
+                    customerContextMenu.show(tree, e.getX(), e.getY());
+                } else if (userObject instanceof TestScenario) {
+                    scenarioContextMenu.show(tree, e.getX(), e.getY());
+                } else if (userObject instanceof TestCrefo) {
+                    testCrefoContextMenu.show(tree, e.getX(), e.getY());
+                }
+            }
+        }
+    }
+
+    /**
+     * Loads the file history from config into the ComboBox.
+     */
+    private void loadFileHistory() {
+        JComboBox<String> cbHistory = customerPanel.getFileHistoryComboBox();
+        cbHistory.removeAllItems();
+        cbHistory.addItem("-- Zuletzt geladen --");
+
+        String historyData = cfg.getProperty(FILE_HISTORY_KEY);
+        if (!historyData.isEmpty()) {
+            for (String filePath : historyData.split(DIRECTORY_SEPARATOR)) {
+                if (!filePath.trim().isEmpty()) {
+                    File file = new File(filePath.trim());
+                    if (file.exists()) {
+                        cbHistory.addItem(filePath.trim());
+                    }
+                }
+            }
+        }
+
+        // Add listener for selection
+        cbHistory.addActionListener(e -> {
+            if (isLoadingFromHistory) return;
+            int selectedIndex = cbHistory.getSelectedIndex();
+            if (selectedIndex > 0) {
+                String filePath = (String) cbHistory.getSelectedItem();
+                loadFromHistoryFile(filePath);
+            }
+        });
+    }
+
+    /**
+     * Adds a file to the history ComboBox and saves to config.
+     */
+    private void addToFileHistory(File file) {
+        if (file == null || !file.exists()) return;
+
+        String filePath = file.getAbsolutePath();
+
+        // Get current history
+        String historyData = cfg.getProperty(FILE_HISTORY_KEY);
+        LinkedHashSet<String> history = new LinkedHashSet<>();
+        history.add(filePath); // Add new one first
+
+        if (!historyData.isEmpty()) {
+            for (String path : historyData.split(DIRECTORY_SEPARATOR)) {
+                if (!path.trim().isEmpty() && !path.trim().equals(filePath)) {
+                    history.add(path.trim());
+                }
+            }
+        }
+
+        // Limit history size
+        List<String> historyList = new ArrayList<>(history);
+        if (historyList.size() > MAX_FILE_HISTORY) {
+            historyList = historyList.subList(0, MAX_FILE_HISTORY);
+        }
+
+        // Save to config
+        cfg.setProperty(FILE_HISTORY_KEY, String.join(DIRECTORY_SEPARATOR, historyList));
+        cfg.save();
+
+        // Update ComboBox
+        isLoadingFromHistory = true;
+        JComboBox<String> cbHistory = customerPanel.getFileHistoryComboBox();
+        cbHistory.removeAllItems();
+        cbHistory.addItem("-- Zuletzt geladen --");
+        for (String path : historyList) {
+            cbHistory.addItem(path);
+        }
+        cbHistory.setSelectedIndex(1); // Select the just-loaded file
+        isLoadingFromHistory = false;
+
+        LOG.debug("Added to file history: {}", filePath);
+    }
+
+    /**
+     * Loads customers from a file in the history.
+     */
+    private void loadFromHistoryFile(String filePath) {
+        if (filePath == null || filePath.isEmpty()) return;
+
+        File file = new File(filePath);
+        if (!file.exists()) {
+            JOptionPane.showMessageDialog(this,
+                    "Datei nicht gefunden: " + filePath,
+                    "Fehler", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            currentFile = file;
+            customers = TestDataLoader.loadFromJson(file);
+            buildTree();
+            expandAll();
+
+            LOG.info("Loaded {} customers from history: {}", customers.size(), filePath);
+        } catch (IOException e) {
+            LOG.error("Failed to load from history", e);
+            JOptionPane.showMessageDialog(this,
+                    "Fehler beim Laden: " + e.getMessage(),
+                    "Ladefehler", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // ===== Create New Items =====
+
+    /**
+     * Creates a new scenario for the selected customer.
+     */
+    private void createNewScenario() {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode)
+                customerPanel.getTree().getLastSelectedPathComponent();
+
+        if (node == null) return;
+
+        Object userObject = node.getUserObject();
+        if (!(userObject instanceof TestCustomer customer)) return;
+
+        String name = JOptionPane.showInputDialog(this,
+                "Name des neuen Szenarios:", "Neues Szenario");
+        if (name == null || name.trim().isEmpty()) return;
+
+        TestScenario scenario = new TestScenario(name.trim(), customer);
+        customer.addTestScenario(scenario);
+
+        // Add to tree
+        DefaultMutableTreeNode scenarioNode = new DefaultMutableTreeNode(scenario);
+        customerPanel.getTreeModel().insertNodeInto(scenarioNode, node, node.getChildCount());
+
+        // Expand and select
+        TreePath newPath = new TreePath(scenarioNode.getPath());
+        customerPanel.getTree().expandPath(newPath);
+        customerPanel.getTree().setSelectionPath(newPath);
+
+        LOG.info("Created new scenario: {} for customer: {}", name, customer.getCustomerKey());
+    }
+
+    /**
+     * Creates a new test case for the selected scenario.
+     */
+    private void createNewTestfall() {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode)
+                customerPanel.getTree().getLastSelectedPathComponent();
+
+        if (node == null) return;
+
+        Object userObject = node.getUserObject();
+        if (!(userObject instanceof TestScenario scenario)) return;
+
+        String name = JOptionPane.showInputDialog(this,
+                "Name des neuen Testfalls:", "Neuer Testfall");
+        if (name == null || name.trim().isEmpty()) return;
+
+        TestCrefo crefo = new TestCrefo(name.trim());
+        scenario.addTestCrefo(crefo);
+
+        // Add to tree
+        DefaultMutableTreeNode crefoNode = new DefaultMutableTreeNode(crefo);
+        customerPanel.getTreeModel().insertNodeInto(crefoNode, node, node.getChildCount());
+
+        // Expand and select
+        TreePath newPath = new TreePath(crefoNode.getPath());
+        customerPanel.getTree().expandPath(newPath);
+        customerPanel.getTree().setSelectionPath(newPath);
+
+        LOG.info("Created new testfall: {} for scenario: {}", name, scenario.getScenarioName());
     }
 
     /**
@@ -136,8 +398,9 @@ public class CustomerTreeView extends TreeView {
                 buildTree();
                 expandAll();
 
-                // Save directory to config
+                // Save directory to config and add to file history
                 saveDirectoryToConfig(currentFile.getParentFile());
+                addToFileHistory(currentFile);
 
                 JOptionPane.showMessageDialog(this,
                         customers.size() + " Kunden geladen.",
@@ -187,8 +450,9 @@ public class CustomerTreeView extends TreeView {
                 TestDataLoader.saveToJson(customers, file);
                 currentFile = file;
 
-                // Save directory to config
+                // Save directory to config and add to file history
                 saveDirectoryToConfig(file.getParentFile());
+                addToFileHistory(file);
 
                 JOptionPane.showMessageDialog(this,
                         customers.size() + " Kunden gespeichert.",
