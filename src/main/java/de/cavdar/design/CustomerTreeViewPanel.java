@@ -19,10 +19,17 @@ import java.awt.*;
  */
 public class CustomerTreeViewPanel extends TreeViewPanel {
 
-    // Left toolbar components
+    // Toolbar containers
+    protected JPanel toolbarContainer;
+    protected JToolBar toolbar1;  // Row 1: File history, Load, Save
+    protected JToolBar toolbar2;  // Row 2: Filter, Active only, Refresh
+
+    // Row 1 components
     protected JComboBox<String> cbFileHistory;
     protected JButton btnLoad;
     protected JButton btnSave;
+
+    // Row 2 components
     protected JLabel lblFilter;
     protected JComboBox<String> cbFilter;
     protected JCheckBox chkActiveOnly;
@@ -69,44 +76,68 @@ public class CustomerTreeViewPanel extends TreeViewPanel {
     }
 
     private void setupLeftToolbarComponents() {
-        // File history ComboBox
+        // Create container for two toolbar rows
+        toolbarContainer = new JPanel();
+        toolbarContainer.setLayout(new BoxLayout(toolbarContainer, BoxLayout.Y_AXIS));
+
+        // === Row 1: File history, Load, Save ===
+        toolbar1 = new JToolBar();
+        toolbar1.setFloatable(false);
+
+        // File history ComboBox - shows only filename
         cbFileHistory = new JComboBox<>();
         cbFileHistory.setToolTipText("Zuletzt geladene Dateien");
-        cbFileHistory.setPreferredSize(new Dimension(200, 25));
-        cbFileHistory.setMaximumSize(new Dimension(250, 25));
-        leftToolbar.add(cbFileHistory);
+        Dimension cbSize = new Dimension(180, 25);
+        cbFileHistory.setPreferredSize(cbSize);
+        cbFileHistory.setMinimumSize(cbSize);
+        cbFileHistory.setMaximumSize(cbSize);
+        toolbar1.add(cbFileHistory);
 
-        leftToolbar.addSeparator();
+        toolbar1.addSeparator(new Dimension(5, 0));
 
         // Load/Save buttons
         btnLoad = new JButton("Laden", IconLoader.load("folder_view.png"));
         btnLoad.setToolTipText("Testdaten aus JSON-Datei laden");
-        leftToolbar.add(btnLoad);
+        toolbar1.add(btnLoad);
 
         btnSave = new JButton("Speichern", IconLoader.load("save.png"));
         btnSave.setToolTipText("Testdaten in JSON-Datei speichern");
-        leftToolbar.add(btnSave);
+        toolbar1.add(btnSave);
 
-        leftToolbar.addSeparator();
+        toolbarContainer.add(toolbar1);
 
-        // Filter label and combo
+        // === Row 2: Filter, Active only, Refresh ===
+        toolbar2 = new JToolBar();
+        toolbar2.setFloatable(false);
+
+        // Filter label and combo - fixed size
         lblFilter = new JLabel("Filter:");
-        leftToolbar.add(lblFilter);
+        toolbar2.add(lblFilter);
 
         cbFilter = new JComboBox<>(new String[]{"Alle", "Aktiv", "Inaktiv"});
-        leftToolbar.add(cbFilter);
+        Dimension filterSize = new Dimension(80, 25);
+        cbFilter.setPreferredSize(filterSize);
+        cbFilter.setMinimumSize(filterSize);
+        cbFilter.setMaximumSize(filterSize);
+        toolbar2.add(cbFilter);
 
-        leftToolbar.addSeparator();
+        toolbar2.addSeparator(new Dimension(10, 0));
 
         // Active only checkbox
         chkActiveOnly = new JCheckBox("Nur aktive");
-        leftToolbar.add(chkActiveOnly);
+        toolbar2.add(chkActiveOnly);
 
-        leftToolbar.addSeparator();
+        toolbar2.addSeparator(new Dimension(10, 0));
 
         // Refresh button
         btnRefresh = new JButton("Aktualisieren", IconLoader.load("refresh.png"));
-        leftToolbar.add(btnRefresh);
+        toolbar2.add(btnRefresh);
+
+        toolbarContainer.add(toolbar2);
+
+        // Replace the single leftToolbar with our container
+        leftPanel.remove(leftToolbar);
+        leftPanel.add(toolbarContainer, BorderLayout.NORTH);
     }
 
     private void setupRightToolbarComponents() {

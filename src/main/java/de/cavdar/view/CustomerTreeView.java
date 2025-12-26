@@ -53,6 +53,9 @@ public class CustomerTreeView extends TreeView {
     private File currentFile;
     private boolean isLoadingFromHistory = false;
 
+    // Map filename display to full path
+    private final java.util.Map<String, String> fileHistoryMap = new java.util.LinkedHashMap<>();
+
     // Context menus
     private JPopupMenu customerContextMenu;
     private JPopupMenu scenarioContextMenu;
@@ -176,11 +179,14 @@ public class CustomerTreeView extends TreeView {
 
     /**
      * Loads the file history from config into the ComboBox.
+     * Shows only filenames but stores full paths in fileHistoryMap.
      */
     private void loadFileHistory() {
         JComboBox<String> cbHistory = customerPanel.getFileHistoryComboBox();
         cbHistory.removeAllItems();
-        cbHistory.addItem("-- Zuletzt geladen --");
+        fileHistoryMap.clear();
+
+        cbHistory.addItem("-- Dateien --");
 
         String historyData = cfg.getProperty(FILE_HISTORY_KEY);
         if (!historyData.isEmpty()) {
@@ -188,7 +194,13 @@ public class CustomerTreeView extends TreeView {
                 if (!filePath.trim().isEmpty()) {
                     File file = new File(filePath.trim());
                     if (file.exists()) {
-                        cbHistory.addItem(filePath.trim());
+                        String filename = file.getName();
+                        // Handle duplicate filenames by adding parent folder
+                        if (fileHistoryMap.containsKey(filename)) {
+                            filename = file.getParentFile().getName() + "/" + filename;
+                        }
+                        fileHistoryMap.put(filename, filePath.trim());
+                        cbHistory.addItem(filename);
                     }
                 }
             }
@@ -199,14 +211,18 @@ public class CustomerTreeView extends TreeView {
             if (isLoadingFromHistory) return;
             int selectedIndex = cbHistory.getSelectedIndex();
             if (selectedIndex > 0) {
-                String filePath = (String) cbHistory.getSelectedItem();
-                loadFromHistoryFile(filePath);
+                String displayName = (String) cbHistory.getSelectedItem();
+                String fullPath = fileHistoryMap.get(displayName);
+                if (fullPath != null) {
+                    loadFromHistoryFile(fullPath);
+                }
             }
         });
     }
 
     /**
      * Adds a file to the history ComboBox and saves to config.
+     * ComboBox shows only filenames, full paths stored in config and fileHistoryMap.
      */
     private void addToFileHistory(File file) {
         if (file == null || !file.exists()) return;
@@ -236,15 +252,32 @@ public class CustomerTreeView extends TreeView {
         cfg.setProperty(FILE_HISTORY_KEY, String.join(DIRECTORY_SEPARATOR, historyList));
         cfg.save();
 
-        // Update ComboBox
+        // Rebuild ComboBox with filenames only
         isLoadingFromHistory = true;
         JComboBox<String> cbHistory = customerPanel.getFileHistoryComboBox();
         cbHistory.removeAllItems();
-        cbHistory.addItem("-- Zuletzt geladen --");
-        for (String path : historyList) {
-            cbHistory.addItem(path);
+        fileHistoryMap.clear();
+
+        cbHistory.addItem("-- Dateien --");
+        int selectIndex = 1; // Default to first file
+
+        for (int i = 0; i < historyList.size(); i++) {
+            String path = historyList.get(i);
+            File f = new File(path);
+            String filename = f.getName();
+            // Handle duplicate filenames
+            if (fileHistoryMap.containsKey(filename)) {
+                filename = f.getParentFile().getName() + "/" + filename;
+            }
+            fileHistoryMap.put(filename, path);
+            cbHistory.addItem(filename);
+
+            // Track the just-added file's index
+            if (path.equals(filePath)) {
+                selectIndex = i + 1; // +1 for the header item
+            }
         }
-        cbHistory.setSelectedIndex(1); // Select the just-loaded file
+        cbHistory.setSelectedIndex(selectIndex);
         isLoadingFromHistory = false;
 
         LOG.debug("Added to file history: {}", filePath);
