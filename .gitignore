@@ -11,3 +11,7 @@ logs/
 
 # Config mit sensiblen Daten
 config.properties
+
+# Windows
+Thumbs.db
+Desktop.ini

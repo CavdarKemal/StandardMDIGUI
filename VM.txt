@@ -1,0 +1,579 @@
+Ich erstelle dir einen Plan für die Einrichtung der Entwicklungsumgebung auf E:.
+
+  Entwicklungsumgebung auf E: einrichten
+
+  Ordnerstruktur vorbereiten
+
+  Erstelle zuerst diese Verzeichnisstruktur auf E:
+
+  E:\
+  ├── Development\
+  │   ├── Tools\
+  │   │   ├── Java\           # JDK 25
+  │   │   ├── Maven\          # Apache Maven
+  │   │   └── Git\            # Git
+  │   ├── IDE\
+  │   │   └── IntelliJ\       # IntelliJ IDEA
+  │   └── Projects\           # Deine Projekte
+  └── UserData\
+      ├── npm-global\         # Globale npm-Pakete
+      └── .claude\            # Claude Config
+
+  ---
+  Schritt 1: Git installieren
+
+  1. Download: https://git-scm.com/download/win
+  2. Bei der Installation:
+    - Installationspfad ändern zu: E:\Development\Tools\Git
+    - "Add to PATH" aktivieren
+    - Rest: Standard-Einstellungen
+
+  ---
+  Schritt 2: Java 25 (JDK) installieren
+
+  Option A: Oracle JDK 25
+  1. Download: https://www.oracle.com/java/technologies/downloads/#jdk25-windows
+  2. ZIP-Version herunterladen (nicht Installer)
+  3. Entpacken nach: E:\Development\Tools\Java\jdk-25
+
+  Option B: OpenJDK 25 (Adoptium/Temurin)
+  1. Download: https://adoptium.net/temurin/releases/?version=25
+  2. ZIP-Version wählen
+  3. Entpacken nach: E:\Development\Tools\Java\jdk-25
+
+  ---
+  Schritt 3: Maven installieren
+
+  1. Download: https://maven.apache.org/download.cgi (Binary zip)
+  2. Entpacken nach: E:\Development\Tools\Maven\apache-maven-3.9.x
+
+  ---
+  Schritt 4: Umgebungsvariablen setzen
+
+  Öffne Systemsteuerung → System → Erweiterte Systemeinstellungen → Umgebungsvariablen
+
+  Neue Systemvariablen erstellen:
+
+  | Variable   | Wert                                          |
+  |------------|-----------------------------------------------|
+  | JAVA_HOME  | E:\Development\Tools\Java\jdk-25              |
+  | MAVEN_HOME | E:\Development\Tools\Maven\apache-maven-3.9.x |
+  | GIT_HOME   | E:\Development\Tools\Git                      |
+
+  PATH erweitern (zur System-PATH hinzufügen):
+  %JAVA_HOME%\bin
+  %MAVEN_HOME%\bin
+  %GIT_HOME%\cmd
+
+  Verifizieren (neue CMD öffnen):
+  java -version
+  mvn -version
+  git --version
+
+  ---
+  Schritt 5: IntelliJ IDEA Community installieren
+
+  1. Download: https://www.jetbrains.com/idea/download/?section=windows
+  2. Community Edition wählen
+  3. Bei Installation:
+    - Pfad ändern zu: E:\Development\IDE\IntelliJ
+    - "Add to PATH" aktivieren
+    - ".java" Dateien zuordnen
+
+  Nach der Installation - IDE-Einstellungen auf E: legen:
+
+  Erstelle/bearbeite die Datei:
+  E:\Development\IDE\IntelliJ\bin\idea.properties
+
+  Füge hinzu:
+  idea.config.path=E:/UserData/IntelliJ/config
+  idea.system.path=E:/UserData/IntelliJ/system
+  idea.plugins.path=E:/UserData/IntelliJ/plugins
+  idea.log.path=E:/UserData/IntelliJ/log
+
+  ---
+  Schritt 6: Node.js installieren (für Claude Code)
+
+  Claude Code benötigt Node.js:
+
+  1. Download: https://nodejs.org/en/download/ (LTS Version)
+  2. Bei Installation:
+    - Pfad ändern zu: E:\Development\Tools\Node
+    - "Add to PATH" aktivieren
+
+  npm-Pakete auf E: umleiten:
+  npm config set prefix "E:\UserData\npm-global"
+
+  PATH erweitern um: E:\UserData\npm-global
+
+  ---
+  Schritt 7: Claude Code installieren
+
+  npm install -g @anthropic-ai/claude-code
+
+  Claude-Konfiguration auf E: legen (optional):
+  set CLAUDE_CONFIG_DIR=E:\UserData\.claude
+
+  Diese Variable permanent in Systemvariablen hinzufügen.
+
+  ---
+  Schritt 8: Verifizierung
+
+  Öffne eine neue CMD/PowerShell:
+
+  java -version          # → openjdk 25...
+  mvn -version           # → Apache Maven 3.9.x...
+  git --version          # → git version 2.x.x
+  node -v                # → v22.x.x
+  npm -v                 # → 10.x.x
+  claude --version       # → Claude Code...
+
+  ---
+  Zusammenfassung der Pfade
+
+  | Komponente    | Pfad auf E:                                   |
+  |---------------|-----------------------------------------------|
+  | JDK 25        | E:\Development\Tools\Java\jdk-25              |
+  | Maven         | E:\Development\Tools\Maven\apache-maven-3.9.x |
+  | Git           | E:\Development\Tools\Git                      |
+  | Node.js       | E:\Development\Tools\Node                     |
+  | IntelliJ      | E:\Development\IDE\IntelliJ                   |
+  | npm global    | E:\UserData\npm-global                        |
+  | Claude Config | E:\UserData\.claude                           |
+  | Projekte      | E:\Development\Projects                       |
+
+  ---
+  Soll ich für einen bestimmten Schritt detailliertere Anweisungen geben?
+
+> ja, bitte
+
+● Hier die detaillierte Schritt-für-Schritt-Anleitung:
+
+  ---
+  Schritt 0: Ordnerstruktur erstellen
+
+  Öffne CMD als Administrator und führe aus:
+
+  mkdir E:\Development\Tools\Java
+  mkdir E:\Development\Tools\Maven
+  mkdir E:\Development\Tools\Git
+  mkdir E:\Development\Tools\Node
+  mkdir E:\Development\IDE\IntelliJ
+  mkdir E:\Development\Projects
+  mkdir E:\UserData\npm-global
+  mkdir E:\UserData\.claude
+  mkdir E:\UserData\IntelliJ\config
+  mkdir E:\UserData\IntelliJ\system
+  mkdir E:\UserData\IntelliJ\plugins
+  mkdir E:\UserData\IntelliJ\log
+
+  ---
+  Schritt 1: Git installieren
+
+  1.1 Download
+
+  1. Öffne Browser: https://git-scm.com/download/win
+  2. Klicke auf "64-bit Git for Windows Setup"
+  3. Speichere die Datei (z.B. Git-2.47.1-64-bit.exe)
+
+  1.2 Installation
+
+  1. Starte die heruntergeladene .exe
+  2. Select Destination Location:
+    - Ändere zu: E:\Development\Tools\Git
+    - Klicke Next
+  3. Select Components:
+    - Lasse Standard-Auswahl
+    - Klicke Next
+  4. Select Start Menu Folder:
+    - Standard belassen
+    - Klicke Next
+  5. Choosing the default editor:
+    - Wähle deinen bevorzugten Editor (z.B. "Use Notepad++ as Git's default editor" oder "Use Visual Studio Code")
+    - Klicke Next
+  6. Adjusting the name of the initial branch:
+    - Wähle "Let Git decide" oder "Override: main"
+    - Klicke Next
+  7. Adjusting your PATH environment:
+    - Wähle: "Git from the command line and also from 3rd-party software" (empfohlen)
+    - Klicke Next
+  8. Choosing the SSH executable:
+    - Wähle: "Use bundled OpenSSH"
+    - Klicke Next
+  9. Choosing HTTPS transport backend:
+    - Wähle: "Use the OpenSSL library"
+    - Klicke Next
+  10. Configuring the line ending conversions:
+    - Wähle: "Checkout Windows-style, commit Unix-style line endings"
+    - Klicke Next
+  11. Configuring the terminal emulator:
+    - Wähle: "Use MinTTY"
+    - Klicke Next
+  12. Default behavior of 'git pull':
+    - Wähle: "Default (fast-forward or merge)"
+    - Klicke Next
+  13. Choose a credential helper:
+    - Wähle: "Git Credential Manager"
+    - Klicke Next
+  14. Configuring extra options:
+    - ☑ Enable file system caching
+    - Klicke Next
+  15. Configuring experimental options:
+    - Keine auswählen
+    - Klicke Install
+  16. Warte bis fertig → Finish
+
+  1.3 Verifizieren
+
+  Öffne neue CMD:
+  git --version
+  Erwartete Ausgabe: git version 2.47.1.windows.1 (oder ähnlich)
+
+  1.4 Git konfigurieren
+
+  git config --global user.name "Dein Name"
+  git config --global user.email "deine.email@example.com"
+
+  ---
+  Schritt 2: Java 25 (JDK) installieren
+
+  2.1 Download (Oracle JDK)
+
+  1. Öffne: https://www.oracle.com/java/technologies/downloads/#jdk25-windows
+  2. Scrolle zu Windows
+  3. Klicke auf "x64 Compressed Archive" (ZIP-Datei, ca. 200 MB)
+  4. Akzeptiere die Lizenz und lade herunter
+
+  2.2 Entpacken
+
+  1. Öffne den Downloads-Ordner
+  2. Rechtsklick auf jdk-25_windows-x64_bin.zip
+  3. "Alle extrahieren..."
+  4. Ziel: E:\Development\Tools\Java
+  5. Klicke Extrahieren
+
+  Nach dem Entpacken sollte existieren:
+  E:\Development\Tools\Java\jdk-25\
+  ├── bin\
+  ├── conf\
+  ├── include\
+  ├── jmods\
+  ├── legal\
+  ├── lib\
+  └── release
+
+  2.3 JAVA_HOME setzen
+
+  1. Drücke Win + R, tippe sysdm.cpl, drücke Enter
+  2. Klicke auf Tab "Erweitert"
+  3. Klicke "Umgebungsvariablen..."
+  4. Unter "Systemvariablen" klicke "Neu..."
+    - Variablenname: JAVA_HOME
+    - Variablenwert: E:\Development\Tools\Java\jdk-25
+    - Klicke OK
+  5. Wähle "Path" in Systemvariablen → "Bearbeiten..."
+  6. Klicke "Neu"
+  7. Füge ein: %JAVA_HOME%\bin
+  8. Klicke OK → OK → OK
+
+  2.4 Verifizieren
+
+  Öffne neue CMD:
+  java -version
+  Erwartete Ausgabe:
+  java version "25" 2025-09-16
+  Java(TM) SE Runtime Environment (build 25+...)
+  Java HotSpot(TM) 64-Bit Server VM (build 25+..., mixed mode)
+
+  ---
+  Schritt 3: Maven installieren
+
+  3.1 Download
+
+  1. Öffne: https://maven.apache.org/download.cgi
+  2. Unter "Files" klicke auf "apache-maven-3.9.9-bin.zip" (Binary zip archive)
+  3. Speichere die Datei
+
+  3.2 Entpacken
+
+  1. Rechtsklick auf apache-maven-3.9.9-bin.zip
+  2. "Alle extrahieren..."
+  3. Ziel: E:\Development\Tools\Maven
+  4. Klicke Extrahieren
+
+  Nach dem Entpacken sollte existieren:
+  E:\Development\Tools\Maven\apache-maven-3.9.9\
+  ├── bin\
+  ├── boot\
+  ├── conf\
+  ├── lib\
+  ├── LICENSE
+  ├── NOTICE
+  └── README.txt
+
+  3.3 MAVEN_HOME setzen
+
+  1. Win + R → sysdm.cpl → Enter
+  2. Tab "Erweitert" → "Umgebungsvariablen..."
+  3. Unter "Systemvariablen" klicke "Neu..."
+    - Variablenname: MAVEN_HOME
+    - Variablenwert: E:\Development\Tools\Maven\apache-maven-3.9.9
+    - Klicke OK
+  4. Wähle "Path" → "Bearbeiten..."
+  5. Klicke "Neu"
+  6. Füge ein: %MAVEN_HOME%\bin
+  7. OK → OK → OK
+
+  3.4 Maven Repository auf E: legen (optional aber empfohlen)
+
+  Erstelle Ordner:
+  mkdir E:\UserData\.m2\repository
+
+  Erstelle/bearbeite Datei E:\UserData\.m2\settings.xml:
+  <?xml version="1.0" encoding="UTF-8"?>
+  <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0
+                                https://maven.apache.org/xsd/settings-1.2.0.xsd">
+      <localRepository>E:\UserData\.m2\repository</localRepository>
+  </settings>
+
+  Setze Umgebungsvariable:
+  1. Neue Systemvariable:
+    - Name: MAVEN_OPTS
+    - Wert: -Dmaven.repo.local=E:\UserData\.m2\repository
+
+  Alternativ (einfacher):
+  1. Neue Systemvariable:
+    - Name: MAVEN_USER_HOME
+    - Wert: E:\UserData\.m2
+
+  3.5 Verifizieren
+
+  Öffne neue CMD:
+  mvn -version
+  Erwartete Ausgabe:
+  Apache Maven 3.9.9 (...)
+  Maven home: E:\Development\Tools\Maven\apache-maven-3.9.9
+  Java version: 25, vendor: Oracle Corporation
+  Java home: E:\Development\Tools\Java\jdk-25
+
+  ---
+  Schritt 4: Node.js installieren
+
+  4.1 Download
+
+  1. Öffne: https://nodejs.org/en/download/
+  2. Wähle "Windows Installer (.msi)" - 64-bit - LTS Version
+  3. Speichere die Datei
+
+  4.2 Installation
+
+  1. Starte die .msi Datei
+  2. Klicke Next
+  3. Akzeptiere Lizenz → Next
+  4. Destination Folder:
+    - Klicke Change...
+    - Navigiere zu: E:\Development\Tools\Node
+    - Klicke OK → Next
+  5. Custom Setup:
+    - Lasse alles aktiviert
+    - Klicke Next
+  6. Tools for Native Modules:
+    - ☐ Deaktiviere "Automatically install the necessary tools..."
+    - Klicke Next
+  7. Klicke Install
+  8. Warte → Finish
+
+  4.3 npm Global-Verzeichnis auf E: legen
+
+  Öffne neue CMD:
+  npm config set prefix "E:\UserData\npm-global"
+
+  Füge zur PATH hinzu:
+  1. Win + R → sysdm.cpl → Enter
+  2. Erweitert → Umgebungsvariablen...
+  3. Path (Systemvariablen) → Bearbeiten...
+  4. Neu → E:\UserData\npm-global
+  5. OK → OK → OK
+
+  4.4 npm Cache auf E: legen (optional)
+
+  npm config set cache "E:\UserData\npm-cache"
+
+  4.5 Verifizieren
+
+  Öffne neue CMD:
+  node -v
+  npm -v
+  npm config get prefix
+  Erwartete Ausgaben:
+  v22.12.0  (oder ähnliche LTS Version)
+  10.9.0    (oder ähnlich)
+  E:\UserData\npm-global
+
+  ---
+  Schritt 5: Claude Code installieren
+
+  5.1 Claude Config-Verzeichnis setzen
+
+  1. Win + R → sysdm.cpl → Enter
+  2. Erweitert → Umgebungsvariablen...
+  3. Neu... (Systemvariablen)
+    - Name: CLAUDE_CONFIG_DIR
+    - Wert: E:\UserData\.claude
+  4. OK → OK → OK
+
+  5.2 Installation
+
+  Öffne neue CMD:
+  npm install -g @anthropic-ai/claude-code
+
+  Warte bis die Installation abgeschlossen ist (kann 1-2 Minuten dauern).
+
+  5.3 Verifizieren
+
+  claude --version
+
+  5.4 Erster Start & Authentifizierung
+
+  cd E:\Development\Projects
+  claude
+
+  Beim ersten Start:
+  1. Claude zeigt einen Link zur Authentifizierung
+  2. Öffne den Link im Browser
+  3. Melde dich mit deinem Anthropic-Account an
+  4. Kopiere den Token und füge ihn in der CMD ein
+
+  ---
+  Schritt 6: IntelliJ IDEA Community installieren
+
+  6.1 Download
+
+  1. Öffne: https://www.jetbrains.com/idea/download/?section=windows
+  2. Scrolle zu "IntelliJ IDEA Community Edition"
+  3. Klicke "Download" (.exe)
+  4. Speichere die Datei
+
+  6.2 Installation
+
+  1. Starte die .exe
+  2. Klicke Next
+  3. Destination Folder:
+    - Klicke Browse...
+    - Wähle: E:\Development\IDE\IntelliJ
+    - Klicke OK → Next
+  4. Installation Options:
+    - ☑ Create Desktop Shortcut (64-bit)
+    - ☑ Update PATH variable (Add "bin" folder to PATH)
+    - ☑ Add "Open Folder as Project"
+    - ☑ .java - IntelliJ IDEA Community Edition
+    - Klicke Next
+  5. Start Menu Folder:
+    - Standard belassen
+    - Klicke Install
+  6. Warte bis fertig
+  7. ☑ Run IntelliJ IDEA Community Edition
+  8. Klicke Finish
+
+  6.3 IntelliJ-Daten auf E: umleiten
+
+  Bevor du IntelliJ zum ersten Mal startest (oder schließe es zuerst):
+
+  1. Navigiere zu: E:\Development\IDE\IntelliJ\bin
+  2. Öffne idea.properties mit Notepad
+  3. Füge am Ende hinzu:
+
+  # Custom paths on E: drive
+  idea.config.path=E:/UserData/IntelliJ/config
+  idea.system.path=E:/UserData/IntelliJ/system
+  idea.plugins.path=E:/UserData/IntelliJ/plugins
+  idea.log.path=E:/UserData/IntelliJ/log
+
+  4. Speichere die Datei
+
+  6.4 Erster Start von IntelliJ
+
+  1. Starte IntelliJ IDEA
+  2. Import Settings: Wähle "Do not import settings" → OK
+  3. Data Sharing: Wähle nach Präferenz
+  4. Warte bis IntelliJ vollständig geladen ist
+
+  6.5 JDK in IntelliJ konfigurieren
+
+  1. Klicke "New Project" oder "Open" → dann File → Project Structure
+  2. Links: "SDKs"
+  3. Klicke "+" → "Add JDK..."
+  4. Navigiere zu: E:\Development\Tools\Java\jdk-25
+  5. Klicke OK
+  6. Klicke Apply → OK
+
+  6.6 Maven in IntelliJ konfigurieren
+
+  1. File → Settings (oder Ctrl+Alt+S)
+  2. Links: Build, Execution, Deployment → Build Tools → Maven
+  3. Maven home path: E:\Development\Tools\Maven\apache-maven-3.9.9
+  4. User settings file: E:\UserData\.m2\settings.xml
+  5. Local repository: E:\UserData\.m2\repository
+  6. Klicke Apply → OK
+
+  ---
+  Schritt 7: Finale Verifizierung
+
+  Öffne eine neue CMD und führe alle Tests aus:
+
+  echo === Umgebungsvariablen ===
+  echo JAVA_HOME=%JAVA_HOME%
+  echo MAVEN_HOME=%MAVEN_HOME%
+  echo CLAUDE_CONFIG_DIR=%CLAUDE_CONFIG_DIR%
+
+  echo.
+  echo === Versionen ===
+  java -version
+  echo.
+  mvn -version
+  echo.
+  git --version
+  echo.
+  node -v
+  echo.
+  npm -v
+  echo.
+  claude --version
+
+  ---
+  Zusammenfassung: Alle Umgebungsvariablen
+
+  | Variable          | Wert                                          |
+  |-------------------|-----------------------------------------------|
+  | JAVA_HOME         | E:\Development\Tools\Java\jdk-25              |
+  | MAVEN_HOME        | E:\Development\Tools\Maven\apache-maven-3.9.9 |
+  | MAVEN_USER_HOME   | E:\UserData\.m2                               |
+  | CLAUDE_CONFIG_DIR | E:\UserData\.claude                           |
+
+  PATH-Einträge:
+  %JAVA_HOME%\bin
+  %MAVEN_HOME%\bin
+  E:\UserData\npm-global
+
+  (Git und Node.js fügen sich selbst zur PATH hinzu während der Installation)
+
+  ---
+  Hast du Fragen zu einem bestimmten Schritt oder soll ich bei der Ausführung helfen?
+  
+  
+  
+   Ich arbeite am Java-Projekt StandardMDIGUI unter E:\Development\Projects\StandardMDIGUI.
+
+  Kontext:
+  - Neue Windows 10 VM mit Entwicklungsumgebung auf E:
+  - JDK 25: E:\Development\Tools\Java\jdk-25
+  - Maven: E:\Development\Tools\Maven\apache-maven-3.9.9
+  - IntelliJ IDEA: E:\Development\IDE\IntelliJ
+  - Projekte: E:\Development\Projects
+  
+  
+  
+  claude funktioniert nur, wenn ich es in einem cmd-Fenster ausführe. 
+  Die Verzeichnisse "e:\Development\UserData\.claude\" sowie "e:\Development\UserData\ npm-global\" sind leer! Wo sind die Daten denn erstellt? Unter C:\ ?
