@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: standardmdi-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: standardmdi
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+  # Java Swing Application
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: standardmdi-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database connection
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: standardmdi
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      # Display for X11 forwarding (Windows: host.docker.internal:0)
+      DISPLAY: host.docker.internal:0
+      # Config file path for persistence
+      CONFIG_FILE_PATH: /app/config/config.properties
+    volumes:
+      # Config files (all .properties files available for loading)
+      - ./config:/app/config
+      # X11 socket (Linux)
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    networks:
+      - app-network
+    # For Windows with VcXsrv, use host.docker.internal:0
+    # For Linux, use the host's DISPLAY variable
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
